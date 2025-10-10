@@ -5,15 +5,17 @@
  * with fallback to local Hardhat development network
  */
 
-// NEW: Read contract address from deployment.json
-import deploymentData from '../../../blockchain/aegis-blockchain/deployment.json';
+// FIXED: Hardcoded contract address instead of importing deployment.json
+const CONTRACT_ADDRESS = '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512';
+const CHAIN_ID = 31337;
+const NETWORK_NAME = 'localhost';
 
 // NEW: Blockchain network configuration
 export const BLOCKCHAIN_CONFIG = {
   // Contract configuration
-  CONTRACT_ADDRESS: deploymentData.address,
-  CHAIN_ID: parseInt(deploymentData.chainId),
-  NETWORK_NAME: deploymentData.network,
+  CONTRACT_ADDRESS: CONTRACT_ADDRESS,
+  CHAIN_ID: CHAIN_ID,
+  NETWORK_NAME: NETWORK_NAME,
   
   // Network RPC URLs
   RPC_URL: {
@@ -178,8 +180,8 @@ export const PRIVACY_POLICY = {
 };
 
 // NEW: Helper function to get privacy policy hash
-export const getPrivacyPolicyHash = () => {
-  const { ethers } = require('ethers');
+export const getPrivacyPolicyHash = async () => {
+  const { ethers } = await import('ethers');
   if (!PRIVACY_POLICY.HASH) {
     PRIVACY_POLICY.HASH = ethers.utils.id(PRIVACY_POLICY.ID);
   }
