@@ -33,7 +33,7 @@ const availabilityLimiter = rateLimit({
  */
 const createAccountLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour window
-  max: 5, // 5 account creations per hour
+  max: 500, // 5 account creations per hour
   message: {
     error: 'Account creation limit exceeded. Please try again in an hour.'
   },

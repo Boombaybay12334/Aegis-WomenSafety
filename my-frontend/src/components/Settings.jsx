@@ -1,37 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { getSession } from '../services/accountService';
 
 export default function Settings() {
   const session = getSession();
   
-  // Load saved settings from localStorage
+  // All settings state
   const [steganographyEnabled, setSteganographyEnabled] = useState(
     localStorage.getItem('steganographyEnabled') === 'true'
   );
   const [inactivityTime, setInactivityTime] = useState(
     localStorage.getItem('inactivityTime') || '5'
   );
-  const [emergencyContact, setEmergencyContact] = useState(
-    localStorage.getItem('emergencyContact') || ''
+  const [inactivityAction, setInactivityAction] = useState(
+    localStorage.getItem('inactivityAction') || 'none'
   );
-  const [randomTabSwitch, setRandomTabSwitch] = useState(
-    localStorage.getItem('randomTabSwitch') === 'true'
+  const [autoSOS, setAutoSOS] = useState(
+    localStorage.getItem('autoSOS') === 'true'
   );
-  const [lockOnInactivity, setLockOnInactivity] = useState(
-    localStorage.getItem('lockOnInactivity') === 'true'
+  const [autoSOSDays, setAutoSOSDays] = useState(
+    localStorage.getItem('autoSOSDays') || '30'
   );
-  const [deadManSwitch, setDeadManSwitch] = useState(
-    localStorage.getItem('deadManSwitch') === 'true'
-  );
-  const [deadManDays, setDeadManDays] = useState(
-    localStorage.getItem('deadManDays') || '30'
-  );
-  const [locationSharing, setLocationSharing] = useState(false);
   
   const [feedback, setFeedback] = useState('');
-  const [showContactInput, setShowContactInput] = useState(!emergencyContact);
   const [lastLoginDate, setLastLoginDate] = useState('');
+  const [locationSharing, setLocationSharing] = useState(false);
 
   useEffect(() => {
     // Get last login date
@@ -42,38 +34,51 @@ export default function Settings() {
     }
 
     // Check if location permission is granted
-    if (deadManSwitch && navigator.geolocation) {
+    if (autoSOS && navigator.geolocation) {
       navigator.permissions.query({ name: 'geolocation' }).then((result) => {
         setLocationSharing(result.state === 'granted');
       });
     }
-  }, [deadManSwitch]);
+  }, [autoSOS]);
 
   if (!session) {
     return <p>Loading...</p>;
   }
 
-  const handleDeadManSwitchToggle = (enabled) => {
-    setDeadManSwitch(enabled);
+  const handleInactivityActionChange = (action) => {
+    setInactivityAction(action);
+    
+    if (action === 'none') {
+      setFeedback('Inactivity protection disabled');
+    } else if (action === 'lock') {
+      setFeedback('App will lock after inactivity');
+    } else if (action === 'switch') {
+      setFeedback('Tab will switch to Google.com after inactivity');
+    }
+    
+    setTimeout(() => setFeedback(''), 2000);
+  };
+
+  const handleAutoSOSToggle = (enabled) => {
+    setAutoSOS(enabled);
     
     if (enabled) {
-      // Request location permission when enabling Dead Man's Switch
+      // Request location permission when enabling Auto SOS
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             setLocationSharing(true);
-            // Store current location
             localStorage.setItem('userLocation', JSON.stringify({
               lat: position.coords.latitude,
               lng: position.coords.longitude,
               timestamp: new Date().toISOString()
             }));
-            setFeedback('Location sharing enabled for Dead Man\'s Switch');
+            setFeedback('Location sharing enabled for Automatic SOS');
             setTimeout(() => setFeedback(''), 3000);
           },
           (error) => {
             setLocationSharing(false);
-            setFeedback('Location access denied. Dead Man\'s Switch will work without location.');
+            setFeedback('Location access denied. Automatic SOS will work without location.');
             setTimeout(() => setFeedback(''), 5000);
           }
         );
@@ -82,30 +87,22 @@ export default function Settings() {
   };
 
   const handleSaveSettings = () => {
-    // Validate emergency contact if provided
-    if (emergencyContact && !/^\d{10}$/.test(emergencyContact)) {
-      setFeedback('Please enter a valid 10-digit phone number');
-      return;
-    }
-
     // Save all settings to localStorage
     localStorage.setItem('steganographyEnabled', steganographyEnabled);
     localStorage.setItem('inactivityTime', inactivityTime);
-    localStorage.setItem('emergencyContact', emergencyContact);
-    localStorage.setItem('randomTabSwitch', randomTabSwitch);
-    localStorage.setItem('lockOnInactivity', lockOnInactivity);
-    localStorage.setItem('deadManSwitch', deadManSwitch);
-    localStorage.setItem('deadManDays', deadManDays);
+    localStorage.setItem('inactivityAction', inactivityAction);
+    localStorage.setItem('autoSOS', autoSOS);
+    localStorage.setItem('autoSOSDays', autoSOSDays);
     
     // Update last login date
     localStorage.setItem('lastLoginDate', new Date().toISOString());
 
-    // Update location if Dead Man's Switch is enabled
-    if (deadManSwitch && locationSharing) {
+    // Update location if Auto SOS is enabled
+    if (autoSOS && locationSharing) {
       updateLocation();
     }
 
-    setFeedback('Settings saved successfully!');
+    setFeedback('✓ All settings saved successfully!');
     setTimeout(() => setFeedback(''), 3000);
   };
 
@@ -123,13 +120,6 @@ export default function Settings() {
           console.error('Location update failed:', error);
         }
       );
-    }
-  };
-
-  const handleEmergencyContactChange = (e) => {
-    const value = e.target.value.replace(/\D/g, ''); // Only numbers
-    if (value.length <= 10) {
-      setEmergencyContact(value);
     }
   };
 
@@ -163,7 +153,7 @@ export default function Settings() {
         <h3>⏱️ Inactivity Protection</h3>
         
         <div className="form-group">
-          <label>Auto-lock after inactivity (minutes)</label>
+          <label>Inactivity timer (minutes)</label>
           <select 
             className="input-field"
             value={inactivityTime}
@@ -176,102 +166,87 @@ export default function Settings() {
             <option value="15">15 minutes</option>
             <option value="30">30 minutes</option>
           </select>
+          <p style={{fontSize: '0.85em', color: '#6c757d', marginTop: '5px'}}>
+            Action will trigger if you're inactive for this duration
+          </p>
         </div>
 
-        <div className="checkbox-group">
-          <input 
-            type="checkbox" 
-            id="lockOnInactivity"
-            checked={lockOnInactivity}
-            onChange={(e) => setLockOnInactivity(e.target.checked)}
-          />
-          <label htmlFor="lockOnInactivity">
-            Lock app after inactivity
+        <div style={{marginTop: '15px'}}>
+          <label style={{fontWeight: '600', display: 'block', marginBottom: '10px'}}>
+            What should happen after inactivity?
           </label>
-        </div>
-
-        <div className="checkbox-group">
-          <input 
-            type="checkbox" 
-            id="randomTabSwitch"
-            checked={randomTabSwitch}
-            onChange={(e) => setRandomTabSwitch(e.target.checked)}
-          />
-          <label htmlFor="randomTabSwitch">
-            Switch to Google.com randomly for cover
-          </label>
-        </div>
-        <p style={{fontSize: '0.85em', color: '#6c757d', marginLeft: '30px', marginTop: '-10px'}}>
-          Randomly redirects to Google.com to avoid suspicion if someone checks your tabs.
-        </p>
-      </div>
-
-      {/* Emergency Contact */}
-      <div className="settings-section">
-        <h3>🚨 Emergency SOS</h3>
-        
-        {emergencyContact && !showContactInput ? (
-          <div className="info-box">
-            <p><strong>Emergency Contact:</strong> +91 {emergencyContact}</p>
-            <button 
-              onClick={() => setShowContactInput(true)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--primary-color)',
-                cursor: 'pointer',
-                textDecoration: 'underline',
-                padding: 0,
-                marginTop: '10px'
-              }}
-            >
-              Change contact number
-            </button>
+          
+          <div className="radio-group" style={{marginBottom: '10px'}}>
+            <input 
+              type="radio" 
+              id="inactivity-none"
+              name="inactivityAction"
+              checked={inactivityAction === 'none'}
+              onChange={() => handleInactivityActionChange('none')}
+            />
+            <label htmlFor="inactivity-none">
+              Do nothing (disable inactivity protection)
+            </label>
           </div>
-        ) : (
-          <>
-            <div className="form-group">
-              <label>Emergency Contact Number</label>
-              <input 
-                type="tel" 
-                className="input-field"
-                placeholder="Enter 10-digit mobile number"
-                value={emergencyContact}
-                onChange={handleEmergencyContactChange}
-                maxLength="10"
-              />
-              <p style={{fontSize: '0.85em', color: '#6c757d', marginTop: '5px'}}>
-                This number will receive your SOS alerts. Asked only once and stored securely.
-              </p>
-            </div>
-          </>
-        )}
+
+          <div className="radio-group" style={{marginBottom: '10px'}}>
+            <input 
+              type="radio" 
+              id="inactivity-lock"
+              name="inactivityAction"
+              checked={inactivityAction === 'lock'}
+              onChange={() => handleInactivityActionChange('lock')}
+            />
+            <label htmlFor="inactivity-lock">
+              🔒 Lock app and logout
+            </label>
+          </div>
+          <p style={{fontSize: '0.85em', color: '#6c757d', marginLeft: '30px', marginTop: '-5px', marginBottom: '10px'}}>
+            You'll need to login again with your passphrase
+          </p>
+
+          <div className="radio-group">
+            <input 
+              type="radio" 
+              id="inactivity-switch"
+              name="inactivityAction"
+              checked={inactivityAction === 'switch'}
+              onChange={() => handleInactivityActionChange('switch')}
+            />
+            <label htmlFor="inactivity-switch">
+              🌐 Switch to Google.com
+            </label>
+          </div>
+          <p style={{fontSize: '0.85em', color: '#6c757d', marginLeft: '30px', marginTop: '-5px'}}>
+            Instantly redirects to Google to avoid suspicion
+          </p>
+        </div>
       </div>
 
-      {/* Dead Man's Switch */}
+      {/* Automatic SOS */}
       <div className="settings-section">
-        <h3>⚠️ Dead Man's Switch</h3>
+        <h3>⚠️ Automatic SOS After Inactivity</h3>
         
         <div className="checkbox-group">
           <input 
             type="checkbox" 
-            id="deadManSwitch"
-            checked={deadManSwitch}
-            onChange={(e) => handleDeadManSwitchToggle(e.target.checked)}
+            id="autoSOS"
+            checked={autoSOS}
+            onChange={(e) => handleAutoSOSToggle(e.target.checked)}
           />
-          <label htmlFor="deadManSwitch">
-            Enable automatic SOS if not logged in for extended period
+          <label htmlFor="autoSOS">
+            Enable automatic SOS if I don't login for extended period
           </label>
         </div>
 
-        {deadManSwitch && (
+        {autoSOS && (
           <>
             <div className="form-group" style={{marginTop: '15px'}}>
-              <label>Send SOS to authorities if not logged in for:</label>
+              <label>Send automatic SOS to authorities if not logged in for:</label>
               <select 
                 className="input-field"
-                value={deadManDays}
-                onChange={(e) => setDeadManDays(e.target.value)}
+                value={autoSOSDays}
+                onChange={(e) => setAutoSOSDays(e.target.value)}
               >
                 <option value="7">7 days</option>
                 <option value="14">14 days</option>
@@ -282,7 +257,6 @@ export default function Settings() {
               </select>
             </div>
 
-            {/* Location Sharing Status */}
             <div className="info-box" style={{marginTop: '15px', backgroundColor: locationSharing ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 38, 38, 0.1)'}}>
               <p style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '5px'}}>
                 <span style={{fontSize: '1.2em'}}>{locationSharing ? '📍' : '⚠️'}</span>
@@ -290,8 +264,8 @@ export default function Settings() {
               </p>
               <p style={{fontSize: '0.85em', color: '#6c757d', marginTop: '5px'}}>
                 {locationSharing 
-                  ? 'Your location will be shared with authorities if Dead Man\'s Switch is triggered.'
-                  : 'Location access is required for Dead Man\'s Switch to share your location with authorities.'}
+                  ? 'Your location will be shared with authorities if Automatic SOS is triggered.'
+                  : 'Location access is required to share your location with authorities.'}
               </p>
             </div>
 
@@ -305,13 +279,13 @@ export default function Settings() {
             )}
 
             <div className="warning-box" style={{marginTop: '15px'}}>
-              <strong>⚠️ Important:</strong> If you don't login for {deadManDays} days, an automatic SOS alert 
+              <strong>⚠️ Important:</strong> If you don't login for {autoSOSDays} days, an automatic SOS alert 
               will be sent to authorities with:
               <ul style={{marginTop: '10px', marginBottom: '0', paddingLeft: '20px'}}>
                 <li>Your encrypted evidence</li>
                 <li>Your last known location {locationSharing ? '✓' : '(not enabled)'}</li>
-                <li>Emergency contact information</li>
                 <li>Timestamp of last activity</li>
+                <li>Alert to NCW, Police, and Women's Helpline</li>
               </ul>
               <p style={{marginTop: '10px', marginBottom: '0', fontSize: '0.9em'}}>
                 This is a critical safety measure in case something happens to you.
@@ -319,10 +293,27 @@ export default function Settings() {
             </div>
           </>
         )}
+
+        {!autoSOS && (
+          <div className="info-box" style={{marginTop: '15px', backgroundColor: '#f8fafc'}}>
+            <p style={{margin: 0}}>
+              Automatic SOS is <strong>disabled</strong>. Only manual SOS (via the 🚨 SOS button in navbar) is active.
+            </p>
+          </div>
+        )}
+
+        <div className="info-box" style={{marginTop: '15px', backgroundColor: '#f0f9ff'}}>
+          <p><strong>All SOS alerts are sent directly to:</strong></p>
+          <ul style={{marginTop: '8px', marginBottom: '0', paddingLeft: '20px', fontSize: '0.9em'}}>
+            <li>National Commission for Women (NCW)</li>
+            <li>Local Police Department</li>
+            <li>Women's Helpline (1091)</li>
+          </ul>
+        </div>
       </div>
 
       {feedback && (
-        <div className={feedback.includes('denied') ? "form-feedback error" : "form-feedback success"} style={{marginTop: '20px'}}>
+        <div className={feedback.includes('denied') || feedback.includes('disabled') ? "form-feedback error" : "form-feedback success"} style={{marginTop: '20px'}}>
           {feedback}
         </div>
       )}
@@ -332,7 +323,7 @@ export default function Settings() {
         className="main-btn"
         style={{marginTop: '20px'}}
       >
-        Save Settings
+        💾 Save All Settings
       </button>
     </div>
   );

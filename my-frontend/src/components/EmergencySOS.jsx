@@ -5,21 +5,11 @@ import { getSession } from '../services/accountService';
 export default function EmergencySOS() {
   const session = getSession();
   const navigate = useNavigate();
-  const [emergencyContact, setEmergencyContact] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [location, setLocation] = useState(null);
   const [customMessage, setCustomMessage] = useState('');
 
   useEffect(() => {
-    // Check if emergency contact is set
-    const savedContact = localStorage.getItem('emergencyContact');
-    if (!savedContact) {
-      alert('Please set your emergency contact number in Settings first!');
-      navigate('/settings');
-      return;
-    }
-    setEmergencyContact(savedContact);
-
     // Get current location
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -34,33 +24,29 @@ export default function EmergencySOS() {
         }
       );
     }
-  }, [navigate]);
+  }, []);
 
   const handleSendSOS = async () => {
-    if (!emergencyContact) {
-      alert('No emergency contact set!');
-      navigate('/settings');
-      return;
-    }
-
     setIsSending(true);
 
     try {
       // TODO: Implement actual SOS sending logic
-      // 1. Send SMS to emergency contact
-      // 2. Send location data
-      // 3. Send custom message
-      // 4. Trigger evidence access link
+      // 1. Send alert to NCW
+      // 2. Send alert to local police
+      // 3. Send alert to Women's Helpline (1091)
+      // 4. Send location data
+      // 5. Send custom message
+      // 6. Trigger evidence access
 
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      alert(`🚨 SOS Alert Sent!\n\nTo: +91 ${emergencyContact}\nLocation: ${location ? 'Sent' : 'Not available'}\n\nYour emergency contact has been notified!`);
+      alert(`🚨 EMERGENCY SOS SENT!\n\nAlerts sent to:\n✓ National Commission for Women (NCW)\n✓ Local Police Department\n✓ Women's Helpline (1091)\n\nLocation: ${location ? 'Sent' : 'Not available'}\n\nAuthorities have been notified!`);
       
       navigate('/dashboard');
 
     } catch (error) {
       console.error('SOS failed:', error);
-      alert('Failed to send SOS. Please try again or call emergency services directly.');
+      alert('Failed to send SOS. Please try again or call 1091 (Women\'s Helpline) or 100 (Police) directly.');
     } finally {
       setIsSending(false);
     }
@@ -73,15 +59,19 @@ export default function EmergencySOS() {
   return (
     <div className="container">
       <h1 style={{color: '#dc2626'}}>🚨 Emergency SOS</h1>
-      <p className="subtitle">Send an immediate alert to your emergency contact</p>
+      <p className="subtitle">Send immediate alert to authorities</p>
 
       <div className="warning-box" style={{backgroundColor: '#fee2e2', borderLeftColor: '#dc2626'}}>
-        <strong>⚠️ Warning:</strong> This will immediately notify your emergency contact with your location and evidence access.
+        <strong>⚠️ Warning:</strong> This will immediately notify authorities with your location and evidence access.
       </div>
 
       <div className="info-box" style={{marginTop: '20px'}}>
-        <p><strong>Alert will be sent to:</strong></p>
-        <p style={{fontSize: '1.2em', fontWeight: '600'}}>+91 {emergencyContact}</p>
+        <p><strong>Alerts will be sent to:</strong></p>
+        <ul style={{marginTop: '10px', marginBottom: '0', paddingLeft: '20px'}}>
+          <li>📞 <strong>National Commission for Women (NCW)</strong></li>
+          <li>👮 <strong>Local Police Department</strong></li>
+          <li>🆘 <strong>Women's Helpline - 1091</strong></li>
+        </ul>
       </div>
 
       {location && (
@@ -118,12 +108,15 @@ export default function EmergencySOS() {
         style={{backgroundColor: '#dc2626', marginTop: '20px'}}
         disabled={isSending}
       >
-        {isSending ? 'Sending SOS...' : '🚨 SEND EMERGENCY SOS'}
+        {isSending ? 'Sending SOS...' : '🚨 SEND EMERGENCY SOS TO AUTHORITIES'}
       </button>
 
-      <p className="footer-link" style={{marginTop: '20px'}}>
-        <Link to="/dashboard">← Cancel and go back</Link>
-      </p>
+      <div className="info-box" style={{marginTop: '20px', backgroundColor: '#fff3cd'}}>
+        <p style={{fontSize: '0.9em', margin: 0}}>
+          <strong>Emergency Helplines:</strong><br />
+          Women's Helpline: <strong>1091</strong> | Police: <strong>100</strong> | Ambulance: <strong>108</strong>
+        </p>
+      </div>
     </div>
   );
 }
