@@ -1,3 +1,11 @@
+/* Remove gap for homepage */
+main:has(.homepage) {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
 .homepage {
   width: 100%;
   background: linear-gradient(135deg, #7dd3fc 0%, #bfdbfe 50%, #dbeafe 100%);
@@ -5,6 +13,9 @@
   color: #1e293b;
   font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   scroll-behavior: smooth;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
 }
 
 /* Navbar Styling - Light Blue */
