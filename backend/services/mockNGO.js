@@ -8,15 +8,71 @@
  * Backend coordinates but NEVER combines Shard B + Shard C.
  */
 
+const fs = require('fs');
+const path = require('path');
+
 class MockNGOService {
   constructor() {
-    // In-memory storage for demo (production would use NGO partner APIs)
+    // Persistent storage for demo (production would use NGO partner APIs)
+    this.storageFile = path.join(__dirname, '..', 'data', 'ngo-shards.json');
     this.shardStorage = new Map();
     this.counter = 0;
     this.isEnabled = process.env.MOCK_NGO_ENABLED === 'true';
     
+    // Load existing data from file
+    this._loadFromFile();
+    
     if (this.isEnabled) {
       console.log('🏥 [Mock NGO] Service initialized for demo');
+      console.log(`🏥 [Mock NGO] Loaded ${this.shardStorage.size} existing shards from storage`);
+    }
+  }
+
+  /**
+   * Load shard data from persistent file
+   */
+  _loadFromFile() {
+    try {
+      // Ensure data directory exists
+      const dataDir = path.dirname(this.storageFile);
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+
+      // Load existing data if file exists
+      if (fs.existsSync(this.storageFile)) {
+        const data = JSON.parse(fs.readFileSync(this.storageFile, 'utf8'));
+        
+        // Restore Map from JSON
+        this.shardStorage = new Map(Object.entries(data.shards || {}));
+        this.counter = data.counter || 0;
+        
+        console.log(`🏥 [Mock NGO] Loaded ${this.shardStorage.size} shards from persistent storage`);
+      } else {
+        console.log('🏥 [Mock NGO] No existing storage file, starting fresh');
+      }
+    } catch (error) {
+      console.error('🚨 [Mock NGO] Failed to load from file:', error.message);
+      // Continue with empty storage
+      this.shardStorage = new Map();
+      this.counter = 0;
+    }
+  }
+
+  /**
+   * Save shard data to persistent file
+   */
+  _saveToFile() {
+    try {
+      const data = {
+        shards: Object.fromEntries(this.shardStorage),
+        counter: this.counter,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      fs.writeFileSync(this.storageFile, JSON.stringify(data, null, 2));
+    } catch (error) {
+      console.error('🚨 [Mock NGO] Failed to save to file:', error.message);
     }
   }
 
@@ -53,6 +109,9 @@ class MockNGOService {
 
       // Store shard
       this.shardStorage.set(ngoId, shardData);
+
+      // Save to persistent storage
+      this._saveToFile();
 
       console.log(`🏥 [Mock NGO] Stored Shard B for ${walletAddress} with ID: ${ngoId}`);
       

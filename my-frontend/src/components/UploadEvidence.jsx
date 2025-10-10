@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getSession } from '../services/accountService';
+import { uploadEvidence } from '../services/evidenceService';
 import { Link } from 'react-router-dom';
 
 export default function UploadEvidence() {
@@ -75,15 +76,15 @@ export default function UploadEvidence() {
     setFeedback('');
 
     try {
-      // TODO: Implement actual upload and steganography encoding
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Upload evidence using real encryption and backend
+      const result = await uploadEvidence(evidenceFiles, coverImage, description);
 
       setUploadSuccess(true);
       
       if (steganographyEnabled) {
-        setFeedback(`${evidenceFiles.length} file(s) uploaded and hidden successfully! Your proof is now securely stored.`);
+        setFeedback(`${result.filesUploaded} file(s) uploaded and hidden successfully! Your proof is now securely stored. Evidence ID: ${result.evidenceId}`);
       } else {
-        setFeedback(`${evidenceFiles.length} file(s) uploaded successfully! Your evidence is now securely stored.`);
+        setFeedback(`${result.filesUploaded} file(s) uploaded successfully! Your evidence is now securely stored. Evidence ID: ${result.evidenceId}`);
       }
       
       setTimeout(() => {
@@ -91,11 +92,11 @@ export default function UploadEvidence() {
         setCoverImage(null);
         setDescription('');
         setUploadSuccess(false);
-      }, 3000);
+      }, 5000); // Increased timeout to show evidence ID
 
     } catch (error) {
       console.error('Upload failed:', error);
-      setFeedback('Upload failed. Please try again.');
+      setFeedback(`Upload failed: ${error.message}`);
     } finally {
       setIsUploading(false);
     }

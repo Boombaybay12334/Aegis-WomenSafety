@@ -8,15 +8,71 @@
  * Only the client with Shard A can reconstruct the master key.
  */
 
+const fs = require('fs');
+const path = require('path');
+
 class MockKMSService {
   constructor() {
-    // In-memory storage for demo (production would use AWS KMS)
+    // Persistent storage for demo (production would use AWS KMS)
+    this.storageFile = path.join(__dirname, '..', 'data', 'kms-shards.json');
     this.encryptedShards = new Map();
     this.counter = 0;
     this.isEnabled = process.env.MOCK_KMS_ENABLED === 'true';
     
+    // Load existing data from file
+    this._loadFromFile();
+    
     if (this.isEnabled) {
       console.log('🔐 [Mock KMS] Service initialized for demo');
+      console.log(`🔐 [Mock KMS] Loaded ${this.encryptedShards.size} existing shards from storage`);
+    }
+  }
+
+  /**
+   * Load shard data from persistent file
+   */
+  _loadFromFile() {
+    try {
+      // Ensure data directory exists
+      const dataDir = path.dirname(this.storageFile);
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+
+      // Load existing data if file exists
+      if (fs.existsSync(this.storageFile)) {
+        const data = JSON.parse(fs.readFileSync(this.storageFile, 'utf8'));
+        
+        // Restore Map from JSON
+        this.encryptedShards = new Map(Object.entries(data.shards || {}));
+        this.counter = data.counter || 0;
+        
+        console.log(`🔐 [Mock KMS] Loaded ${this.encryptedShards.size} shards from persistent storage`);
+      } else {
+        console.log('🔐 [Mock KMS] No existing storage file, starting fresh');
+      }
+    } catch (error) {
+      console.error('🚨 [Mock KMS] Failed to load from file:', error.message);
+      // Continue with empty storage
+      this.encryptedShards = new Map();
+      this.counter = 0;
+    }
+  }
+
+  /**
+   * Save shard data to persistent file
+   */
+  _saveToFile() {
+    try {
+      const data = {
+        shards: Object.fromEntries(this.encryptedShards),
+        counter: this.counter,
+        lastUpdated: new Date().toISOString()
+      };
+      
+      fs.writeFileSync(this.storageFile, JSON.stringify(data, null, 2));
+    } catch (error) {
+      console.error('🚨 [Mock KMS] Failed to save to file:', error.message);
     }
   }
 
@@ -51,6 +107,9 @@ class MockKMSService {
 
       // Store encrypted shard
       this.encryptedShards.set(kmsId, encryptedData);
+
+      // Save to persistent storage
+      this._saveToFile();
 
       console.log(`🔐 [Mock KMS] Encrypted and stored Shard C for ${walletAddress} with ID: ${kmsId}`);
       

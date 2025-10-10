@@ -104,3 +104,115 @@ export const updateShards = async ({ walletAddress, shardB, shardC }) => {
   console.log(`[API] Shards updated successfully for ${walletAddress}`);
   return await response.json();
 };
+
+/**
+ * Evidence API functions
+ */
+
+// Evidence API base URL
+const EVIDENCE_API_URL = 'http://localhost:5000/api/v1/evidence';
+
+/**
+ * Get Shard B for evidence encryption
+ */
+export const getShardForEncryption = async (walletAddress) => {
+  console.log(`[API] Getting shard for encryption: ${walletAddress}`);
+  
+  const response = await fetch(`${API_BASE_URL}/get-shard`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ walletAddress })
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to get encryption shard');
+  }
+  
+  return await response.json();
+};
+
+/**
+ * Upload evidence metadata and encrypted files
+ */
+export const uploadEvidenceMetadata = async (evidenceData) => {
+  try {
+    console.log(`[API] Uploading evidence metadata for: ${evidenceData.walletAddress}`);
+    console.log(`[API] Evidence API URL: ${EVIDENCE_API_URL}/upload`);
+    console.log(`[API] Files to upload: ${evidenceData.files.length}`);
+    
+    const response = await fetch(`${EVIDENCE_API_URL}/upload`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(evidenceData)
+    });
+    
+    console.log(`[API] Response status: ${response.status} ${response.statusText}`);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[API] Error response: ${errorText}`);
+      
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch (parseError) {
+        console.error(`[API] Failed to parse error response:`, parseError);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    console.log(`[API] Upload successful:`, result);
+    return result;
+    
+  } catch (error) {
+    console.error(`[API] Upload failed:`, error);
+    console.error(`[API] Error details:`, {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    throw error;
+  }
+};
+
+/**
+ * Get list of evidence for a wallet address
+ */
+export const getEvidenceListAPI = async (walletAddress) => {
+  console.log(`[API] Getting evidence list for: ${walletAddress}`);
+  
+  const response = await fetch(`${EVIDENCE_API_URL}/list/${walletAddress}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to get evidence list');
+  }
+  
+  return await response.json();
+};
+
+/**
+ * Get specific evidence by ID
+ */
+export const getEvidenceAPI = async (evidenceId) => {
+  console.log(`[API] Getting evidence: ${evidenceId}`);
+  
+  const response = await fetch(`${EVIDENCE_API_URL}/${evidenceId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to get evidence');
+  }
+  
+  return await response.json();
+};

@@ -19,6 +19,8 @@ const helmet = require('helmet');
 const { connectDatabase } = require('./config/database');
 const { generalLimiter, healthCheckLimiter } = require('./middleware/rateLimiter');
 const accountRoutes = require('./routes/account');
+const evidenceRoutes = require('./routes/evidence');
+const emergencyRoutes = require('./routes/emergency');
 const User = require('./models/User');
 const mockKMS = require('./services/mockKMS');
 const mockNGO = require('./services/mockNGO');
@@ -29,8 +31,8 @@ const PORT = process.env.PORT || 5000;
 // Display startup banner
 console.log('');
 console.log('🛡️  ═══════════════════════════════════════════════════');
-console.log('🛡️  AEGIS Phase 0 Backend Server Starting...');
-console.log('🛡️  Anonymous Account System with Shamir\'s Secret Sharing');
+console.log('🛡️  AEGIS Phase 1 Backend Server Starting...');
+console.log('🛡️  Evidence Upload + SOS System with Zero-Knowledge Security');
 console.log('🛡️  ═══════════════════════════════════════════════════');
 console.log('');
 
@@ -53,7 +55,7 @@ app.use(helmet({
 
 // CORS configuration - Allow frontend access
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: ['http://localhost:5173', 'http://localhost:5174', process.env.FRONTEND_URL || 'http://localhost:5173'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
@@ -125,6 +127,8 @@ app.get('/health', healthCheckLimiter, async (req, res) => {
 
 // API routes
 app.use('/api/v1/account', accountRoutes);
+app.use('/api/v1/evidence', evidenceRoutes);
+app.use('/api/v1/emergency', emergencyRoutes);
 
 // 404 handler for API routes
 app.use('/api/*', (req, res) => {
@@ -207,12 +211,26 @@ async function startServer() {
       console.log('🚀 ═══════════════════════════════════════════════════');
       console.log('');
       console.log('📋 Available Endpoints:');
-      console.log('   POST /api/v1/account/check-availability');
-      console.log('   POST /api/v1/account/create');
-      console.log('   POST /api/v1/account/verify');
-      console.log('   POST /api/v1/account/recover-shard');
-      console.log('   POST /api/v1/account/update-shards');
-      console.log('   GET  /health');
+      console.log('   Account Management:');
+      console.log('     POST /api/v1/account/check-availability');
+      console.log('     POST /api/v1/account/create');
+      console.log('     POST /api/v1/account/verify');
+      console.log('     POST /api/v1/account/recover-shard');
+      console.log('     POST /api/v1/account/update-shards');
+      console.log('     POST /api/v1/account/get-shard');
+      console.log('   Evidence Management:');
+      console.log('     POST /api/v1/evidence/upload');
+      console.log('     GET  /api/v1/evidence/list/:walletAddress');
+      console.log('     GET  /api/v1/evidence/:evidenceId');
+      console.log('     GET  /api/v1/evidence/stats/summary');
+      console.log('   Emergency Services:');
+      console.log('     POST /api/v1/emergency/sos');
+      console.log('     POST /api/v1/emergency/dead-man-switch');
+      console.log('     GET  /api/v1/emergency/history/:walletAddress');
+      console.log('     GET  /api/v1/emergency/stats/summary');
+      console.log('     GET  /api/v1/emergency/active');
+      console.log('   System:');
+      console.log('     GET  /health');
       console.log('');
       console.log('🔒 Security Features Active:');
       console.log('   ✅ Rate limiting on all endpoints');

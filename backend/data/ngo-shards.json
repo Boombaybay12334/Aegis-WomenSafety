@@ -1,0 +1,86 @@
+{
+  "shards": {
+    "ngo_0xdedb21f23b6e0d8c0ed32be9768614460817ffa4_1_1760129922951": {
+      "walletAddress": "0xdedb21f23b6e0d8c0ed32be9768614460817ffa4",
+      "shardB": "3:cbb2015cc4cdf84a49e19bc53ce788a139fa00c4b2f5bd6892c53cb9d1dea8a3",
+      "createdAt": "2025-10-10T20:58:42.951Z",
+      "version": 1,
+      "partnerOrg": "Mock NGO Partner",
+      "securityLevel": "encrypted_at_rest"
+    },
+    "ngo_0xdedb21f23b6e0d8c0ed32be9768614460817ffa4_2_1760129924225": {
+      "walletAddress": "0xdedb21f23b6e0d8c0ed32be9768614460817ffa4",
+      "shardB": "3:ae6f7c0baf75945a7b4bf1bbcebf098ae0afb8577bc60cffdaad3cb947cdc07b",
+      "createdAt": "2025-10-10T20:58:44.225Z",
+      "version": 1,
+      "partnerOrg": "Mock NGO Partner",
+      "securityLevel": "encrypted_at_rest"
+    },
+    "ngo_0xee2f903400000000000000000000000000000000_3_1760130495028": {
+      "walletAddress": "0xee2f903400000000000000000000000000000000",
+      "shardB": "2:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      "createdAt": "2025-10-10T21:08:15.028Z",
+      "version": 1,
+      "partnerOrg": "Mock NGO Partner",
+      "securityLevel": "encrypted_at_rest"
+    },
+    "ngo_0x7ac7d1bc00000000000000000000000000000000_4_1760130513217": {
+      "walletAddress": "0x7ac7d1bc00000000000000000000000000000000",
+      "shardB": "2:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      "createdAt": "2025-10-10T21:08:33.217Z",
+      "version": 1,
+      "partnerOrg": "Mock NGO Partner",
+      "securityLevel": "encrypted_at_rest"
+    },
+    "ngo_0xd716d4d100000000000000000000000000000000_5_1760130643262": {
+      "walletAddress": "0xd716d4d100000000000000000000000000000000",
+      "shardB": "2:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      "createdAt": "2025-10-10T21:10:43.262Z",
+      "version": 1,
+      "partnerOrg": "Mock NGO Partner",
+      "securityLevel": "encrypted_at_rest"
+    },
+    "ngo_0x03fcfc98f5dd77907cb27fc1ca95d5b4d9cf9076_6_1760130663629": {
+      "walletAddress": "0x03fcfc98f5dd77907cb27fc1ca95d5b4d9cf9076",
+      "shardB": "3:7f3e308c1d91c631fb8bfdc5409eb363bf1a283cb30e2c3102863e14997faaf5",
+      "createdAt": "2025-10-10T21:11:03.629Z",
+      "version": 1,
+      "partnerOrg": "Mock NGO Partner",
+      "securityLevel": "encrypted_at_rest"
+    },
+    "ngo_0xebe788b200000000000000000000000000000000_7_1760130779109": {
+      "walletAddress": "0xebe788b200000000000000000000000000000000",
+      "shardB": "2:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      "createdAt": "2025-10-10T21:12:59.109Z",
+      "version": 1,
+      "partnerOrg": "Mock NGO Partner",
+      "securityLevel": "encrypted_at_rest"
+    },
+    "ngo_0x0c56ded100000000000000000000000000000000_8_1760130801226": {
+      "walletAddress": "0x0c56ded100000000000000000000000000000000",
+      "shardB": "2:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      "createdAt": "2025-10-10T21:13:21.226Z",
+      "version": 1,
+      "partnerOrg": "Mock NGO Partner",
+      "securityLevel": "encrypted_at_rest"
+    },
+    "ngo_0x960e379800000000000000000000000000000000_9_1760130899951": {
+      "walletAddress": "0x960e379800000000000000000000000000000000",
+      "shardB": "2:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      "createdAt": "2025-10-10T21:14:59.951Z",
+      "version": 1,
+      "partnerOrg": "Mock NGO Partner",
+      "securityLevel": "encrypted_at_rest"
+    },
+    "ngo_0xa52a27a300000000000000000000000000000000_10_1760130927803": {
+      "walletAddress": "0xa52a27a300000000000000000000000000000000",
+      "shardB": "2:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      "createdAt": "2025-10-10T21:15:27.803Z",
+      "version": 1,
+      "partnerOrg": "Mock NGO Partner",
+      "securityLevel": "encrypted_at_rest"
+    }
+  },
+  "counter": 10,
+  "lastUpdated": "2025-10-10T21:15:27.803Z"
+}

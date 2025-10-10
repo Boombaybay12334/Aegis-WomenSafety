@@ -30,29 +30,29 @@ const userSchema = new mongoose.Schema({
     }
   },
 
-  // Reference to Shard B stored in NGO partner system
-  shardB_id: {
+  // Shard B stored directly in MongoDB (our backend)
+  shardB: {
     type: String,
     required: true,
     validate: {
-      validator: function(id) {
-        // Validate NGO ID format
-        return typeof id === 'string' && id.startsWith('ngo_') && id.length > 10;
+      validator: function(shard) {
+        // Validate shard format: "x:hexdata" where x is a number and hexdata is hex
+        return typeof shard === 'string' && /^[1-9]\d*:[a-fA-F0-9]+$/.test(shard) && shard.length > 5;
       },
-      message: 'Invalid NGO shard reference ID'
+      message: 'Invalid shard B format - must be "x:hexdata" format'
     }
   },
 
-  // Reference to Shard C stored in KMS
+  // Reference to Shard C stored in Mock NGO service
   shardC_id: {
     type: String,
     required: true,
     validate: {
       validator: function(id) {
-        // Validate KMS ID format
-        return typeof id === 'string' && id.startsWith('kms_') && id.length > 10;
+        // Validate NGO ID format  
+        return typeof id === 'string' && id.startsWith('ngo_') && id.length > 10;
       },
-      message: 'Invalid KMS shard reference ID'
+      message: 'Invalid NGO shard reference ID'
     }
   },
 

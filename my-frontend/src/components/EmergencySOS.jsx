@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getSession } from '../services/accountService';
+import { sendEmergencySOS, getCurrentLocation } from '../services/sosService';
 
 export default function EmergencySOS() {
   const session = getSession();
@@ -10,43 +11,35 @@ export default function EmergencySOS() {
   const [customMessage, setCustomMessage] = useState('');
 
   useEffect(() => {
-    // Get current location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-        },
-        (error) => {
-          console.error('Location error:', error);
-        }
-      );
-    }
+    // Get current location using SOS service
+    getCurrentLocation()
+      .then(locationData => {
+        setLocation(locationData);
+        console.log('📍 Location obtained for SOS:', locationData);
+      })
+      .catch(error => {
+        console.warn('🌍 Location not available:', error.message);
+      });
   }, []);
 
   const handleSendSOS = async () => {
     setIsSending(true);
 
     try {
-      // TODO: Implement actual SOS sending logic
-      // 1. Send alert to NCW
-      // 2. Send alert to local police
-      // 3. Send alert to Women's Helpline (1091)
-      // 4. Send location data
-      // 5. Send custom message
-      // 6. Trigger evidence access
+      console.log('🚨 Initiating emergency SOS...');
+      
+      // Send real SOS alert using sosService
+      const sosResult = await sendEmergencySOS(location, customMessage);
 
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log('✅ SOS sent successfully:', sosResult);
 
-      alert(`🚨 EMERGENCY SOS SENT!\n\nAlerts sent to:\n✓ National Commission for Women (NCW)\n✓ Local Police Department\n✓ Women's Helpline (1091)\n\nLocation: ${location ? 'Sent' : 'Not available'}\n\nAuthorities have been notified!`);
+      alert(`🚨 EMERGENCY SOS SENT!\n\nSOS ID: ${sosResult.sosId}\n\nAlerts sent to:\n✓ National Commission for Women (NCW)\n✓ Local Police Department\n✓ Women's Helpline (1091)\n\nLocation: ${location ? `${location.lat}, ${location.lng}` : 'Not available'}\nMessage: ${customMessage || 'Standard emergency alert'}\n\nAuthorities have been notified and your evidence is accessible!`);
       
       navigate('/dashboard');
 
     } catch (error) {
       console.error('SOS failed:', error);
-      alert('Failed to send SOS. Please try again or call 1091 (Women\'s Helpline) or 100 (Police) directly.');
+      alert(`Failed to send SOS: ${error.message}\n\nPlease try again or call:\n• 1091 (Women's Helpline)\n• 100 (Police)\n• 112 (Emergency Services)\ndirectly.`);
     } finally {
       setIsSending(false);
     }

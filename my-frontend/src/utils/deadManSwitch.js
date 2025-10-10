@@ -1,3 +1,5 @@
+import { triggerDeadManSwitch } from '../services/sosService';
+
 // Check if Dead Man's Switch should trigger
 export const checkDeadManSwitch = () => {
   const deadManEnabled = localStorage.getItem('deadManSwitch') === 'true';
@@ -31,32 +33,26 @@ export const checkDeadManSwitch = () => {
   return false;
 };
 
-const triggerAutomaticSOS = (emergencyContact, daysSinceLogin, location) => {
+const triggerAutomaticSOS = async (emergencyContact, daysSinceLogin, location) => {
   console.log(`🚨 DEAD MAN'S SWITCH ACTIVATED!`);
   console.log(`User hasn't logged in for ${daysSinceLogin} days`);
   console.log(`Sending SOS to: ${emergencyContact}`);
   
-  if (location) {
-    console.log(`Location: Lat ${location.lat}, Lng ${location.lng}`);
-    console.log(`Location timestamp: ${location.timestamp}`);
-  } else {
-    console.log(`⚠️ Location not available`);
+  try {
+    // Trigger real automatic SOS using sosService
+    const sosResult = await triggerDeadManSwitch(daysSinceLogin, location);
+    
+    console.log('✅ Automatic SOS sent successfully:', sosResult);
+    
+    // Show success alert to user
+    alert(`🚨 DEAD MAN'S SWITCH TRIGGERED\n\nYou haven't logged in for ${daysSinceLogin} days.\n\nSOS ID: ${sosResult.sosId}\n\nAutomatic SOS has been sent to:\n- Emergency Contact: ${emergencyContact}\n- National Commission for Women (NCW)\n- Local Police Department\n- Women's Helpline (1091)\n\nYour evidence and ${location ? 'location have' : 'information has'} been shared with authorities.`);
+    
+  } catch (error) {
+    console.error('🚨 Automatic SOS failed:', error);
+    
+    // Fallback alert
+    alert(`🚨 DEAD MAN'S SWITCH TRIGGERED\n\nYou haven't logged in for ${daysSinceLogin} days.\n\n⚠️ Automatic SOS failed: ${error.message}\n\nPlease manually contact:\n- Emergency Contact: ${emergencyContact}\n- 1091 (Women's Helpline)\n- 100 (Police)\n- 112 (Emergency Services)\n\nYour evidence is still secure and accessible.`);
   }
-  
-  console.log(`Alerting authorities with evidence...`);
-  
-  // TODO: In production, this would:
-  // 1. Send SMS/email to emergency contact
-  // 2. Alert local authorities (NCW, Police) with:
-  //    - Evidence access link
-  //    - User's last known location (if available)
-  //    - Emergency contact details
-  //    - Timestamp of last activity
-  // 3. Trigger automatic evidence decryption process
-  // 4. Send location data to authorities
-  
-  // Show alert to user
-  alert(`🚨 DEAD MAN'S SWITCH TRIGGERED\n\nYou haven't logged in for ${daysSinceLogin} days.\n\nAutomatic SOS has been sent to:\n- Emergency Contact: ${emergencyContact}\n- Authorities: NCW, Local Police\n\nYour evidence and ${location ? 'location have' : 'information has'} been shared.`);
 };
 
 // Background location tracking when Dead Man's Switch is enabled

@@ -23,6 +23,11 @@ export const signUp = async (passphrase) => {
       createdAt: new Date().toISOString(),
     };
     localStorage.setItem(`aegis_user_${address}`, JSON.stringify(userData));
+    
+    // Store encrypted Shard A for evidence encryption
+    localStorage.setItem('encryptedShardA', encryptedShardA);
+    sessionStorage.setItem('passphrase', passphrase);
+    
     createSession(address, shardA);
     
     return { walletAddress: address };
@@ -45,6 +50,10 @@ export const login = async (passphrase) => {
     const { encryptedShardA } = JSON.parse(localUserData);
     shardA = crypto.decryptShardA(encryptedShardA, passphrase);
     if (!shardA) throw new Error('Decryption failed. Invalid passphrase.');
+    
+    // Store encrypted Shard A for evidence encryption
+    localStorage.setItem('encryptedShardA', encryptedShardA);
+    sessionStorage.setItem('passphrase', passphrase);
   } else {
     // NEW DEVICE RECOVERY - FIXED IMPLEMENTATION
     console.log('No local data. Initiating new device recovery...');
@@ -84,6 +93,10 @@ export const login = async (passphrase) => {
       };
       localStorage.setItem(`aegis_user_${address}`, JSON.stringify(newUserData));
       
+      // Store encrypted Shard A for evidence encryption
+      localStorage.setItem('encryptedShardA', encryptedShardA);
+      sessionStorage.setItem('passphrase', passphrase);
+      
       shardA = newShardA;
     } catch (error) {
       console.error('Recovery failed:', error);
@@ -110,6 +123,9 @@ export const createSession = (walletAddress, decryptedShardA) => {
 
 export const logout = () => {
   sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem('passphrase');
+  localStorage.removeItem('encryptedShardA');
+  localStorage.removeItem(CURRENT_WALLET_KEY);
 };
 
 export const getSession = () => {
