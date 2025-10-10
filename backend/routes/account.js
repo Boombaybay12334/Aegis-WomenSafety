@@ -29,6 +29,17 @@ const isValidAddress = (address) => {
   return /^0x[a-fA-F0-9]{40}$/.test(address);
 };
 
+// FIXED: Updated to handle Shamir's Secret Sharing shard format "x:hexdata"
+const isValidShardFormat = (shard) => {
+  if (typeof shard !== 'string' || shard.length === 0) {
+    return false;
+  }
+  
+  // Check if it matches the format "x:hexdata" where x is a number and hexdata is hex
+  const shardPattern = /^[1-9]\d*:[a-fA-F0-9]+$/;
+  return shardPattern.test(shard);
+};
+
 const isValidHexString = (str) => {
   return typeof str === 'string' && /^[a-fA-F0-9]+$/.test(str) && str.length > 0;
 };
@@ -60,7 +71,7 @@ router.post('/check-availability', availabilityLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Invalid wallet address format' });
     }
 
-    // Check if account exists
+    // Check availability
     const existingUser = await User.findByWallet(walletAddress);
     const available = !existingUser;
 
@@ -90,8 +101,12 @@ router.post('/create', createAccountLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Invalid wallet address format' });
     }
 
-    if (!isValidHexString(shardB) || !isValidHexString(shardC)) {
-      return res.status(400).json({ error: 'Invalid shard format (must be hex strings)' });
+    // FIXED: Use the correct shard validation function
+    if (!isValidShardFormat(shardB) || !isValidShardFormat(shardC)) {
+      console.log('🚨 [DEBUG] Invalid shard format received:');
+      console.log('  shardB:', shardB);
+      console.log('  shardC:', shardC);
+      return res.status(400).json({ error: 'Invalid shard format (must be "x:hexdata" format)' });
     }
 
     // SECURITY CHECK: Ensure no sensitive data is received
@@ -153,24 +168,24 @@ router.post('/verify', verifyLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Invalid wallet address format' });
     }
 
-    // Find user
+    // Find user and update last login time
     const user = await User.findByWallet(walletAddress);
-
+    
     if (user) {
-      // Update last login timestamp
-      await user.updateLastLogin();
-
+      user.lastLoginAt = new Date();
+      await user.save();
+      
       console.log(`✅ [API] Account verified for ${walletAddress}`);
-
+      
       res.json({
         exists: true,
         createdAt: user.createdAt
       });
     } else {
       console.log(`❌ [API] Account not found for ${walletAddress}`);
-
-      res.status(404).json({
-        error: 'Account not found'
+      
+      res.json({
+        exists: false
       });
     }
   } catch (error) {
@@ -181,7 +196,7 @@ router.post('/verify', verifyLimiter, async (req, res) => {
 
 /**
  * POST /api/v1/account/recover-shard
- * Recover shards for new device login (requires signature verification)
+ * Recover shards for new device login (with signature verification)
  */
 router.post('/recover-shard', recoveryLimiter, async (req, res) => {
   try {
@@ -199,31 +214,30 @@ router.post('/recover-shard', recoveryLimiter, async (req, res) => {
     // CRITICAL SECURITY: Verify signature to prove wallet ownership
     if (!verifySignature(message, signature, walletAddress)) {
       console.error(`🚨 [SECURITY] Invalid signature for recovery attempt: ${walletAddress}`);
-      return res.status(401).json({ error: 'Invalid signature - wallet ownership not verified' });
+      return res.status(401).json({ error: 'Invalid signature - wallet ownership not proven' });
     }
 
     // Find user account
     const user = await User.findByWallet(walletAddress);
     if (!user) {
+      console.error(`🚨 [SECURITY] Recovery attempt for non-existent account: ${walletAddress}`);
       return res.status(404).json({ error: 'Account not found' });
     }
 
-    // Record recovery attempt for security monitoring
-    await user.recordRecoveryAttempt();
-
-    // Retrieve Shard B from NGO partner
+    // Retrieve shards from external services
     const shardB = await mockNGO.retrieveShardB(user.shardB_id);
-
-    // Retrieve Shard C from KMS
     const shardC = await mockKMS.decrypt(user.shardC_id);
 
+    // Log successful recovery (but not the shard data)
     console.log(`🔓 [API] Shard recovery successful for ${walletAddress}`);
+    console.log(`    Message: ${message}`);
+    console.log(`    NGO ID: ${user.shardB_id}`);
+    console.log(`    KMS ID: ${user.shardC_id}`);
 
-    // Return BOTH shards to client (client still needs Shard A to reconstruct master key)
     res.json({
       success: true,
-      shardB: shardB,
-      shardC: shardC
+      shardB,
+      shardC
     });
   } catch (error) {
     console.error('🚨 [API] Shard recovery failed:', error.message);
@@ -248,8 +262,9 @@ router.post('/update-shards', updateShardsLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Invalid wallet address format' });
     }
 
-    if (!isValidHexString(shardB) || !isValidHexString(shardC)) {
-      return res.status(400).json({ error: 'Invalid shard format (must be hex strings)' });
+    // FIXED: Use the correct shard validation function
+    if (!isValidShardFormat(shardB) || !isValidShardFormat(shardC)) {
+      return res.status(400).json({ error: 'Invalid shard format (must be "x:hexdata" format)' });
     }
 
     // Find user account
@@ -261,17 +276,18 @@ router.post('/update-shards', updateShardsLimiter, async (req, res) => {
     // Update Shard C in KMS
     const newShardCId = await mockKMS.update(user.shardC_id, walletAddress, shardC);
 
-    // Update Shard B with NGO partner
+    // Update Shard B with NGO
     const newShardBId = await mockNGO.updateShardB(user.shardB_id, walletAddress, shardB);
 
-    // Update user record with new shard references
-    await user.updateShardReferences(newShardBId, newShardCId);
+    // Update user record
+    user.shardB_id = newShardBId;
+    user.shardC_id = newShardCId;
+    user.securityMeta.lastShardRotation = new Date();
+    await user.save();
 
-    console.log(`🔄 [API] Shards updated for ${walletAddress}: KMS ${user.shardC_id} → ${newShardCId}, NGO ${user.shardB_id} → ${newShardBId}`);
+    console.log(`🔄 [API] Shards updated for ${walletAddress} - New KMS ID: ${newShardCId}, New NGO ID: ${newShardBId}`);
 
-    res.json({
-      success: true
-    });
+    res.json({ success: true });
   } catch (error) {
     console.error('🚨 [API] Shard update failed:', error.message);
     res.status(500).json({ error: 'Shard update failed' });
