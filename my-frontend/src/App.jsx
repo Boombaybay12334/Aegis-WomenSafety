@@ -1,17 +1,37 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 
 import HomePage from './components/HomePage';
 import CreateAccount from './components/CreateAccount';
 import LoginScreen from './components/LoginScreen';
 import Dashboard from './components/Dashboard';
+import UploadEvidence from './components/UploadEvidence';
+import Settings from './components/Settings';
+import EmergencySOS from './components/EmergencySOS';
+import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import { getSession, logout } from './services/accountService';
+import { useInactivityTimer } from './hooks/useInactivityTimer';
+import { checkDeadManSwitch, startLocationTracking } from './utils/deadManSwitch';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!getSession());
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Enable inactivity timer when logged in
+  if (isLoggedIn) {
+    useInactivityTimer();
+  }
+
+  useEffect(() => {
+    // Check Dead Man's Switch on app load
+    if (isLoggedIn) {
+      checkDeadManSwitch();
+      startLocationTracking();
+    }
+  }, [isLoggedIn]);
 
   const handleLogout = () => {
     logout();
@@ -23,8 +43,12 @@ function App() {
     setIsLoggedIn(true);
   };
 
+  // Show navbar only on protected pages
+  const showNavbar = isLoggedIn && !['/login', '/signup', '/'].includes(location.pathname);
+
   return (
     <div className="app-container">
+      {showNavbar && <Navbar />}
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -35,6 +59,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/upload" 
+            element={
+              <ProtectedRoute>
+                <UploadEvidence />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/settings" 
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/emergency-sos" 
+            element={
+              <ProtectedRoute>
+                <EmergencySOS />
               </ProtectedRoute>
             } 
           />
