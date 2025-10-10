@@ -8,7 +8,8 @@
 
 /* Navbar Styling */
 .navbar {
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
   border-bottom: 1px solid #e2e8f0;
   position: fixed;
   top: 0;
@@ -30,7 +31,7 @@
 .navbar-logo a {
   font-size: 1.8rem;
   font-weight: 800;
-  color: #6366f1;
+  color: #0d9488;
   text-decoration: none;
   letter-spacing: -0.02em;
 }
@@ -54,7 +55,7 @@
 }
 
 .navbar-menu li a:hover {
-  color: #6366f1;
+  color: #0d9488;
 }
 
 .helpline-link {
@@ -67,7 +68,7 @@
 }
 
 .navbar-login-btn {
-  background-color: #6366f1;
+  background-color: #14b8a6;
   color: #ffffff !important;
   padding: 0.6rem 1.5rem;
   border-radius: 8px;
@@ -76,9 +77,9 @@
 }
 
 .navbar-login-btn:hover {
-  background-color: #4f46e5;
+  background-color: #0d9488;
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3);
 }
 
 /* Full Screen Sections */
@@ -92,12 +93,25 @@
   box-sizing: border-box;
 }
 
-/* Hero Section - Full Screen */
+/* Hero Section - Teal/Turquoise Gradient Background */
 .hero-section {
-  background-color: #ffffff;
-  color: #1e293b;
+  background: linear-gradient(135deg, #0d9488 0%, #5eead4 50%, #ccfbf1 100%);
+  color: white;
   text-align: center;
   position: relative;
+  overflow: hidden;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
+              radial-gradient(circle at 20% 80%, rgba(13, 148, 136, 0.3) 0%, transparent 50%);
+  pointer-events: none;
 }
 
 .hero-content {
@@ -112,7 +126,8 @@
   margin-bottom: 1.5rem;
   letter-spacing: -0.02em;
   line-height: 1.1;
-  color: #1e293b;
+  color: white;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
 }
 
 .hero-content .tagline {
@@ -120,28 +135,29 @@
   max-width: 800px;
   margin: 0 auto 3rem;
   line-height: 1.7;
-  color: #475569;
+  color: rgba(255, 255, 255, 0.95);
   font-weight: 400;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.15);
 }
 
 .hero-cta-button {
-  background-color: #6366f1;
-  color: #ffffff;
+  background-color: #ffffff;
+  color: #0d9488;
   padding: 1.4rem 3.5rem;
   border-radius: 12px;
   text-decoration: none;
   font-weight: 700;
   font-size: 1.3rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 10px 40px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   display: inline-block;
   border: 2px solid transparent;
 }
 
 .hero-cta-button:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 50px rgba(99, 102, 241, 0.3);
-  background-color: #4f46e5;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  background-color: #f0fdfa;
 }
 
 .section-title {
@@ -163,13 +179,13 @@
   transform: translateX(-50%);
   width: 80px;
   height: 4px;
-  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  background: linear-gradient(90deg, #14b8a6, #0d9488);
   border-radius: 2px;
 }
 
-/* Features Section - Full Screen */
+/* Features Section - Full Screen with Light Gradient */
 .features-section {
-  background-color: #f8fafc;
+  background: linear-gradient(to bottom, #f0fdfa 0%, #ffffff 100%);
   width: 100%;
 }
 
@@ -182,9 +198,9 @@
   padding: 0 2rem;
 }
 
-/* How It Works Section - Full Screen */
+/* How It Works Section - Full Screen with Teal Tint */
 .how-it-works-section {
-  background-color: #ffffff;
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 50%, #ccfbf1 100%);
   width: 100%;
 }
 
@@ -216,7 +232,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.03), rgba(139, 92, 246, 0.03));
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.03), rgba(94, 234, 212, 0.03));
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
@@ -228,17 +244,17 @@
 
 .feature-card:hover {
   transform: translateY(-10px);
-  box-shadow: 0 25px 60px rgba(99, 102, 241, 0.2);
-  border-color: #c7d2fe;
+  box-shadow: 0 25px 60px rgba(13, 148, 136, 0.2);
+  border-color: #99f6e4;
 }
 
 .step-card {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
   padding: 2.5rem 2rem;
   border-radius: 20px;
   text-align: center;
   border: 1px solid #e2e8f0;
-  border-top: 5px solid #6366f1;
+  border-top: 5px solid #14b8a6;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -252,7 +268,7 @@
   left: 0;
   right: 0;
   height: 5px;
-  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  background: linear-gradient(90deg, #14b8a6, #5eead4);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -263,12 +279,12 @@
 
 .step-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 20px 50px rgba(99, 102, 241, 0.15);
-  border-color: #c7d2fe;
+  box-shadow: 0 20px 50px rgba(13, 148, 136, 0.15);
+  border-color: #99f6e4;
 }
 
 .step-number {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #14b8a6, #0d9488);
   color: white;
   width: 60px;
   height: 60px;
@@ -279,7 +295,7 @@
   font-size: 2rem;
   font-weight: 800;
   margin-bottom: 1.5rem;
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 8px 20px rgba(13, 148, 136, 0.3);
   transition: transform 0.3s ease;
 }
 
@@ -306,7 +322,7 @@
 .feature-icon {
   font-size: 3.5rem;
   margin-bottom: 1.5rem;
-  filter: drop-shadow(0 4px 10px rgba(99, 102, 241, 0.15));
+  filter: drop-shadow(0 4px 10px rgba(13, 148, 136, 0.15));
   transition: transform 0.3s ease;
 }
 
@@ -316,11 +332,11 @@
 
 /* Footer */
 .homepage-footer {
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  color: rgba(255, 255, 255, 0.8);
+  background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+  color: rgba(255, 255, 255, 0.9);
   text-align: center;
   padding: 2.5rem 2rem;
-  border-top: 4px solid #6366f1;
+  border-top: 4px solid #14b8a6;
   position: relative;
 }
 
@@ -331,7 +347,7 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #6366f1, transparent);
+  background: linear-gradient(90deg, transparent, #14b8a6, transparent);
 }
 
 .homepage-footer p {
@@ -341,7 +357,7 @@
 }
 
 .homepage-footer a {
-  color: #a5b4fc;
+  color: #99f6e4;
   text-decoration: none;
   transition: color 0.3s ease;
 }
