@@ -1,116 +1,106 @@
-// --- MOCK BACKEND DATABASE ---
-// In a real app, this data lives on the server.
-const mockDB = {
-  users: {}, // Stores user metadata by wallet address
-  shards: {}, // Stores Shard B and Shard C by wallet address
-};
-// -----------------------------
-
-const FAKE_NETWORK_DELAY = 800; // ms
+// Real backend API connection
+const API_BASE_URL = 'http://localhost:5000/api/v1/account';
 
 /**
- * [MOCK] Checks if a wallet address already exists.
+ * Checks if a wallet address is available for registration.
  */
-export const checkAvailability = (walletAddress) => {
-  console.log(`[API MOCK] Checking availability for: ${walletAddress}`);
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const isTaken = !!mockDB.users[walletAddress.toLowerCase()];
-      resolve({ available: !isTaken });
-    }, FAKE_NETWORK_DELAY);
+export const checkAvailability = async (walletAddress) => {
+  console.log(`[API] Checking availability for: ${walletAddress}`);
+  
+  const response = await fetch(`${API_BASE_URL}/check-availability`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ walletAddress })
   });
-};
-
-/**
- * [MOCK] Creates a new user account.
- */
-export const createAccount = ({ walletAddress, shardB, shardC }) => {
-  console.log(`[API MOCK] Creating account for: ${walletAddress}`);
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const lowerCaseAddress = walletAddress.toLowerCase();
-      if (mockDB.users[lowerCaseAddress]) {
-        return reject({ status: 409, message: 'Account already exists' });
-      }
-      mockDB.users[lowerCaseAddress] = {
-        walletAddress: walletAddress,
-        createdAt: new Date().toISOString(),
-      };
-      mockDB.shards[lowerCaseAddress] = { shardB, shardC };
-      console.log('[API MOCK] Mock DB State:', mockDB);
-      resolve({ success: true, walletAddress });
-    }, FAKE_NETWORK_DELAY);
-  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to check availability');
+  }
+  
+  return await response.json();
 };
 
 /**
- * [MOCK] Verifies if an account exists during login.
+ * Creates a new user account with wallet address and shards.
  */
-export const verifyAccount = (walletAddress) => {
-  console.log(`[API MOCK] Verifying account: ${walletAddress}`);
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const user = mockDB.users[walletAddress.toLowerCase()];
-      if (user) {
-        resolve({ exists: true, ...user });
-      } else {
-        reject({ status: 404, message: 'Account not found' });
-      }
-    }, FAKE_NETWORK_DELAY);
+export const createAccount = async ({ walletAddress, shardB, shardC }) => {
+  console.log(`[API] Creating account for: ${walletAddress}`);
+  
+  const response = await fetch(`${API_BASE_URL}/create`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ walletAddress, shardB, shardC })
   });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create account');
+  }
+  
+  return await response.json();
 };
 
 /**
- * [MOCK] Recovers shardB and shardC for new device login.
- * FIXED: Now returns shardB and shardC instead of shardA
+ * Verifies if an account exists during login.
  */
-export const recoverShard = ({ walletAddress, message, signature }) => {
-  console.log(`[API MOCK] Attempting shard recovery for: ${walletAddress}`);
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const lowerCaseAddress = walletAddress.toLowerCase();
-      // In a real backend, we'd cryptographically verify the signature.
-      // Here, we'll just check if the account and shards exist.
-      const user = mockDB.users[lowerCaseAddress];
-      const userShards = mockDB.shards[lowerCaseAddress];
-
-      if (!user || !userShards) {
-        return reject({ status: 404, message: 'Cannot recover: account not found.' });
-      }
-      
-      // FIXED: Return shardB and shardC, NOT shardA
-      // Backend should NEVER have access to shardA
-      console.log(`[API MOCK] Recovery successful. Returning shardB and shardC.`);
-      resolve({ 
-        success: true, 
-        shardB: userShards.shardB, 
-        shardC: userShards.shardC 
-      });
-    }, FAKE_NETWORK_DELAY);
+export const verifyAccount = async (walletAddress) => {
+  console.log(`[API] Verifying account: ${walletAddress}`);
+  
+  const response = await fetch(`${API_BASE_URL}/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ walletAddress })
   });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Account not found');
+  }
+  
+  return await response.json();
 };
 
 /**
- * [MOCK] Updates stored shards after recovery re-split.
- * NEW FUNCTION: Needed for proper Shamir's Secret Sharing flow
+ * Recovers shardB and shardC for new device login.
+ * Requires cryptographic signature to prove wallet ownership.
  */
-export const updateShards = ({ walletAddress, shardB, shardC }) => {
-  console.log(`[API MOCK] Updating shards for: ${walletAddress}`);
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const lowerCaseAddress = walletAddress.toLowerCase();
-      const user = mockDB.users[lowerCaseAddress];
-      
-      if (!user) {
-        return reject({ status: 404, message: 'Account not found for shard update.' });
-      }
-      
-      // Update the stored shards with new ones
-      mockDB.shards[lowerCaseAddress] = { shardB, shardC };
-      console.log(`[API MOCK] Shards updated successfully for ${walletAddress}`);
-      console.log('[API MOCK] Updated DB State:', mockDB);
-      
-      resolve({ success: true });
-    }, FAKE_NETWORK_DELAY);
+export const recoverShard = async ({ walletAddress, message, signature }) => {
+  console.log(`[API] Attempting shard recovery for: ${walletAddress}`);
+  
+  const response = await fetch(`${API_BASE_URL}/recover-shard`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ walletAddress, message, signature })
   });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Cannot recover: account not found');
+  }
+  
+  console.log(`[API] Recovery successful. Returning shardB and shardC.`);
+  return await response.json();
+};
+
+/**
+ * Updates stored shards after recovery re-split.
+ * Called after successful recovery to rotate shards for security.
+ */
+export const updateShards = async ({ walletAddress, shardB, shardC }) => {
+  console.log(`[API] Updating shards for: ${walletAddress}`);
+  
+  const response = await fetch(`${API_BASE_URL}/update-shards`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ walletAddress, shardB, shardC })
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Account not found for shard update');
+  }
+  
+  console.log(`[API] Shards updated successfully for ${walletAddress}`);
+  return await response.json();
 };
