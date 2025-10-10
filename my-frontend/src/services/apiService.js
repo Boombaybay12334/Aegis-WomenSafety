@@ -61,7 +61,8 @@ export const verifyAccount = (walletAddress) => {
 };
 
 /**
- * [MOCK] Recovers Shard A for a new device login.
+ * [MOCK] Recovers shardB and shardC for new device login.
+ * FIXED: Now returns shardB and shardC instead of shardA
  */
 export const recoverShard = ({ walletAddress, message, signature }) => {
   console.log(`[API MOCK] Attempting shard recovery for: ${walletAddress}`);
@@ -77,12 +78,39 @@ export const recoverShard = ({ walletAddress, message, signature }) => {
         return reject({ status: 404, message: 'Cannot recover: account not found.' });
       }
       
-      // Real backend would combine Shard B + C and re-split.
-      // We will simulate this by creating a "new" Shard A.
-      const newShardA = `new-shard-A-for-${walletAddress.slice(0, 10)}-${Math.random()}`;
+      // FIXED: Return shardB and shardC, NOT shardA
+      // Backend should NEVER have access to shardA
+      console.log(`[API MOCK] Recovery successful. Returning shardB and shardC.`);
+      resolve({ 
+        success: true, 
+        shardB: userShards.shardB, 
+        shardC: userShards.shardC 
+      });
+    }, FAKE_NETWORK_DELAY);
+  });
+};
 
-      console.log(`[API MOCK] Recovery successful. Returning new Shard A.`);
-      resolve({ success: true, shardA: newShardA });
+/**
+ * [MOCK] Updates stored shards after recovery re-split.
+ * NEW FUNCTION: Needed for proper Shamir's Secret Sharing flow
+ */
+export const updateShards = ({ walletAddress, shardB, shardC }) => {
+  console.log(`[API MOCK] Updating shards for: ${walletAddress}`);
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const lowerCaseAddress = walletAddress.toLowerCase();
+      const user = mockDB.users[lowerCaseAddress];
+      
+      if (!user) {
+        return reject({ status: 404, message: 'Account not found for shard update.' });
+      }
+      
+      // Update the stored shards with new ones
+      mockDB.shards[lowerCaseAddress] = { shardB, shardC };
+      console.log(`[API MOCK] Shards updated successfully for ${walletAddress}`);
+      console.log('[API MOCK] Updated DB State:', mockDB);
+      
+      resolve({ success: true });
     }, FAKE_NETWORK_DELAY);
   });
 };

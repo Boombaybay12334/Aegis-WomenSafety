@@ -30,15 +30,37 @@ export const splitKey = async (masterKeyHex) => {
   return secrets.share(keyForSharding, 3, 2);
 };
 
+// Combine shards to reconstruct the master key (inverse of splitKey)
+export const combineShards = async (shards) => {
+  await initializeSecrets(); // Wait for the library to be ready.
+  const reconstructedHex = secrets.combine(shards);
+  return secrets.hex2str(reconstructedHex);
+};
+
 export const encryptShardA = (shardA, passphrase) => {
   return CryptoJS.AES.encrypt(shardA, passphrase).toString();
 };
 
 export const decryptShardA = (encryptedShardA, passphrase) => {
   const bytes = CryptoJS.AES.decrypt(encryptedShardA, passphrase);
-  return bytes.toString(CryptoJS.enc.Utf8);
+  const result = bytes.toString(CryptoJS.enc.Utf8);
+  if (!result) throw new Error('Decryption failed: wrong passphrase or corrupted data');
+  return result;
 };
 
 export const createSignature = async (wallet, message) => {
   return await wallet.signMessage(message);
+};
+
+// Utility function to clear sensitive data from memory
+export const clearSensitiveData = (...variables) => {
+  variables.forEach((variable, index) => {
+    if (typeof variable === 'object' && variable !== null) {
+      Object.keys(variable).forEach(key => {
+        variable[key] = null;
+        delete variable[key];
+      });
+    }
+    variables[index] = null;
+  });
 };

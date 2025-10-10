@@ -5,23 +5,31 @@ const SESSION_KEY = 'aegis_session';
 const CURRENT_WALLET_KEY = 'aegis_current_wallet';
 
 export const signUp = async (passphrase) => {
-  const wallet = crypto.generateWalletFromPassphrase(passphrase);
-  const { address } = wallet;
-  const masterKey = crypto.generateMasterKey();
+  let masterKey, shardA, shardB, shardC;
   
-  // This line is now async and needs 'await'.
-  const [shardA, shardB, shardC] = await crypto.splitKey(masterKey);
+  try {
+    const wallet = crypto.generateWalletFromPassphrase(passphrase);
+    const { address } = wallet;
+    masterKey = crypto.generateMasterKey();
+    
+    // This line is now async and needs 'await'.
+    [shardA, shardB, shardC] = await crypto.splitKey(masterKey);
 
-  await api.createAccount({ walletAddress: address, shardB, shardC });
-  const encryptedShardA = crypto.encryptShardA(shardA, passphrase);
-  const userData = {
-    walletAddress: address,
-    encryptedShardA: encryptedShardA,
-    createdAt: new Date().toISOString(),
-  };
-  localStorage.setItem(`aegis_user_${address}`, JSON.stringify(userData));
-  createSession(address, shardA);
-  return { walletAddress: address };
+    await api.createAccount({ walletAddress: address, shardB, shardC });
+    const encryptedShardA = crypto.encryptShardA(shardA, passphrase);
+    const userData = {
+      walletAddress: address,
+      encryptedShardA: encryptedShardA,
+      createdAt: new Date().toISOString(),
+    };
+    localStorage.setItem(`aegis_user_${address}`, JSON.stringify(userData));
+    createSession(address, shardA);
+    
+    return { walletAddress: address };
+  } finally {
+    // Clear sensitive data from memory
+    crypto.clearSensitiveData({ masterKey, shardA, shardB, shardC });
+  }
 };
 
 export const login = async (passphrase) => {
@@ -30,22 +38,62 @@ export const login = async (passphrase) => {
   await api.verifyAccount(address);
   const localUserData = localStorage.getItem(`aegis_user_${address}`);
   let shardA;
+  
   if (localUserData) {
+    // SAME DEVICE LOGIN
     console.log('Local data found. Decrypting Shard A...');
     const { encryptedShardA } = JSON.parse(localUserData);
     shardA = crypto.decryptShardA(encryptedShardA, passphrase);
     if (!shardA) throw new Error('Decryption failed. Invalid passphrase.');
   } else {
+    // NEW DEVICE RECOVERY - FIXED IMPLEMENTATION
     console.log('No local data. Initiating new device recovery...');
-    const timestamp = new Date().toISOString();
-    const message = `Aegis account recovery for ${address} at ${timestamp}`;
-    const signature = await crypto.createSignature(wallet, message);
-    const { shardA: newShardA } = await api.recoverShard({ walletAddress: address, message, signature });
-    shardA = newShardA;
-    const encryptedShardA = crypto.encryptShardA(shardA, passphrase);
-    const newUserData = { walletAddress: address, encryptedShardA, createdAt: timestamp };
-    localStorage.setItem(`aegis_user_${address}`, JSON.stringify(newUserData));
+    let masterKey, newShardA, newShardB, newShardC;
+    
+    try {
+      const timestamp = new Date().toISOString();
+      const message = `Aegis account recovery for ${address} at ${timestamp}`;
+      const signature = await crypto.createSignature(wallet, message);
+      
+      // Get shardB and shardC from backend
+      const { shardB, shardC } = await api.recoverShard({ 
+        walletAddress: address, 
+        message, 
+        signature 
+      });
+      
+      // Combine shardB + shardC to reconstruct master key
+      masterKey = await crypto.combineShards([shardB, shardC]);
+      
+      // Re-split master key into NEW shards
+      [newShardA, newShardB, newShardC] = await crypto.splitKey(masterKey);
+      
+      // Update backend with new shardB and shardC
+      await api.updateShards({ 
+        walletAddress: address, 
+        shardB: newShardB, 
+        shardC: newShardC 
+      });
+      
+      // Encrypt and store new shardA locally
+      const encryptedShardA = crypto.encryptShardA(newShardA, passphrase);
+      const newUserData = { 
+        walletAddress: address, 
+        encryptedShardA, 
+        createdAt: timestamp 
+      };
+      localStorage.setItem(`aegis_user_${address}`, JSON.stringify(newUserData));
+      
+      shardA = newShardA;
+    } catch (error) {
+      console.error('Recovery failed:', error);
+      throw new Error('Account recovery failed. Please check your passphrase.');
+    } finally {
+      // Clear sensitive data from memory
+      crypto.clearSensitiveData({ masterKey, newShardA, newShardB, newShardC });
+    }
   }
+  
   createSession(address, shardA);
   return { walletAddress: address };
 };
