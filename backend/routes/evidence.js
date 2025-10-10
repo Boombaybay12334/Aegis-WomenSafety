@@ -9,6 +9,8 @@ const express = require('express');
 const Evidence = require('../models/Evidence');
 const User = require('../models/User');
 const { availabilityLimiter, generalLimiter } = require('../middleware/rateLimiter');
+// NEW: Import blockchain service
+const { fundUserWallet, processBlockchainData } = require('../services/blockchainService');
 
 const router = express.Router();
 
@@ -31,7 +33,8 @@ router.post('/upload', generalLimiter, async (req, res) => {
     console.log('📥 [Evidence] Request body keys:', Object.keys(req.body));
     console.log('📥 [Evidence] Files count:', req.body.files ? req.body.files.length : 'undefined');
     
-    const { walletAddress, files, coverImage, description, steganographyEnabled, uploadedAt } = req.body;
+    // NEW: Extract blockchain data from request
+    const { walletAddress, files, coverImage, description, steganographyEnabled, uploadedAt, blockchain } = req.body;
 
     // Input validation
     if (!walletAddress || !files || !Array.isArray(files) || files.length === 0) {
@@ -74,6 +77,10 @@ router.post('/upload', generalLimiter, async (req, res) => {
 
     console.log('✅ [Evidence] File validation passed');
 
+    // NEW: Process blockchain data from frontend
+    const blockchainData = processBlockchainData(blockchain);
+    console.log('⛓️  [Evidence] Blockchain data processed:', blockchainData.anchored ? 'anchored' : 'not anchored');
+
     // Create evidence record
     const evidence = new Evidence({
       walletAddress: walletAddress.toLowerCase(),
@@ -87,19 +94,46 @@ router.post('/upload', generalLimiter, async (req, res) => {
       })),
       coverImage: coverImage || null,
       steganographyEnabled: steganographyEnabled || false,
-      uploadedAt: uploadedAt || new Date()
+      uploadedAt: uploadedAt || new Date(),
+      // NEW: Include blockchain data
+      blockchain: blockchainData
     });
 
     await evidence.save();
 
     console.log(`📤 [Evidence] Upload successful: ${evidence.evidenceId} (${files.length} files, ${evidence.metadata.totalSize} bytes)`);
 
+    // NEW: Fund user wallet after successful evidence upload
+    let fundingResult = null;
+    try {
+      console.log('💳 [Evidence] Initiating wallet funding...');
+      fundingResult = await fundUserWallet(walletAddress, evidence.evidenceId);
+      
+      if (fundingResult.success && !fundingResult.skipped) {
+        console.log(`✅ [Evidence] Wallet funding successful: ${fundingResult.transactionHash}`);
+      } else if (fundingResult.skipped) {
+        console.log(`ℹ️  [Evidence] Wallet funding skipped: ${fundingResult.reason}`);
+      } else {
+        console.warn(`⚠️ [Evidence] Wallet funding failed: ${fundingResult.error}`);
+      }
+    } catch (fundingError) {
+      console.warn('⚠️ [Evidence] Wallet funding failed with exception:', fundingError.message);
+      fundingResult = {
+        success: false,
+        error: fundingError.message,
+        errorType: 'FUNDING_EXCEPTION'
+      };
+    }
+
     res.status(201).json({
       success: true,
       evidenceId: evidence.evidenceId,
       filesUploaded: files.length,
       totalSize: evidence.metadata.totalSize,
-      steganographyEnabled: evidence.steganographyEnabled
+      steganographyEnabled: evidence.steganographyEnabled,
+      // NEW: Include blockchain and funding results
+      blockchain: blockchainData,
+      funding: fundingResult
     });
 
   } catch (error) {

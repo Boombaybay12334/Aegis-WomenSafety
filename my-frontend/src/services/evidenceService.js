@@ -8,6 +8,8 @@
 import { getSession } from './accountService';
 import { combineShards, encryptFile, decryptFile } from './cryptoService';
 import { getShardForEncryption, uploadEvidenceMetadata, getEvidenceListAPI, getEvidenceAPI } from './apiService';
+// NEW: Import blockchain service
+import { anchorEvidenceToBlockchain } from './blockchainService';
 
 /**
  * Upload evidence files with encryption
@@ -98,13 +100,51 @@ export const uploadEvidence = async (files, coverImage, description = '') => {
       };
     }
     
+    // NEW: Blockchain anchoring before backend upload
+    let blockchainResult = null;
+    try {
+      console.log('⛓️  [Evidence] Starting blockchain anchoring...');
+      
+      // Generate temporary evidence ID for blockchain anchoring
+      const tempEvidenceId = `evidence_${walletAddress.slice(2, 10)}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+      
+      // Attempt blockchain anchoring with encrypted files
+      blockchainResult = await anchorEvidenceToBlockchain(
+        tempEvidenceId,
+        encryptedFiles,
+        walletAddress,
+        passphrase
+      );
+      
+      if (blockchainResult.success) {
+        console.log('✅ [Evidence] Blockchain anchoring successful');
+        console.log(`🧾 Transaction: ${blockchainResult.transactionHash}`);
+        console.log(`🧱 Block: ${blockchainResult.blockNumber}`);
+      } else {
+        console.warn('⚠️ [Evidence] Blockchain anchoring failed, continuing with upload...');
+        console.warn(`❌ Error: ${blockchainResult.error}`);
+      }
+      
+    } catch (blockchainError) {
+      console.warn('⚠️ [Evidence] Blockchain anchoring failed with exception, continuing with upload...');
+      console.warn('❌ Blockchain error:', blockchainError.message);
+      
+      blockchainResult = {
+        success: false,
+        error: blockchainError.message,
+        errorType: 'BLOCKCHAIN_EXCEPTION'
+      };
+    }
+    
     // Prepare evidence data for backend
     const evidenceData = {
       walletAddress,
       files: encryptedFiles,
       coverImage: coverImageData,
       steganographyEnabled: !!coverImage,
-      uploadedAt: new Date().toISOString()
+      uploadedAt: new Date().toISOString(),
+      // NEW: Include blockchain data
+      blockchain: blockchainResult
     };
     
     // Upload to backend
@@ -123,7 +163,9 @@ export const uploadEvidence = async (files, coverImage, description = '') => {
       success: true,
       evidenceId: uploadResult.evidenceId,
       filesUploaded: encryptedFiles.length,
-      totalSize: encryptedFiles.reduce((sum, f) => sum + f.fileSize, 0)
+      totalSize: encryptedFiles.reduce((sum, f) => sum + f.fileSize, 0),
+      // NEW: Include blockchain result in response
+      blockchain: blockchainResult
     };
     
   } catch (error) {

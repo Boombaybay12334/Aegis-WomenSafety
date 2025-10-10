@@ -74,6 +74,51 @@ const EvidenceSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  // NEW: Blockchain integration data
+  blockchain: {
+    txHash: {
+      type: String,
+      default: null,
+      index: true  // Index for blockchain transaction lookups
+    },
+    blockNumber: {
+      type: Number,
+      default: null
+    },
+    gasUsed: {
+      type: Number,
+      default: null
+    },
+    merkleRoot: {
+      type: String,
+      default: null
+    },
+    anchored: {
+      type: Boolean,
+      default: false,
+      index: true  // Index for filtering anchored evidence
+    },
+    anchoredAt: {
+      type: Date,
+      default: null
+    },
+    executionTime: {
+      type: Number,
+      default: null // Milliseconds
+    },
+    error: {
+      type: String,
+      default: null
+    },
+    errorType: {
+      type: String,
+      default: null
+    },
+    attemptedAt: {
+      type: Date,
+      default: null
+    }
+  },
   metadata: {
     totalFiles: {
       type: Number,
@@ -96,6 +141,10 @@ const EvidenceSchema = new mongoose.Schema({
 EvidenceSchema.index({ walletAddress: 1, uploadedAt: -1 });
 EvidenceSchema.index({ evidenceId: 1 });
 EvidenceSchema.index({ isDeleted: 1 });
+// NEW: Blockchain-related indexes
+EvidenceSchema.index({ 'blockchain.txHash': 1 });
+EvidenceSchema.index({ 'blockchain.anchored': 1 });
+EvidenceSchema.index({ 'blockchain.anchoredAt': -1 });
 
 // Static methods
 EvidenceSchema.statics.findByWallet = function(walletAddress) {
