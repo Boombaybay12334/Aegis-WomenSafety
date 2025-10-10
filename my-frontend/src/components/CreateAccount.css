@@ -1,0 +1,117 @@
+:root {
+  --primary-color: #007bff;
+  --success-color: #28a745;
+  --error-color: #dc3545;
+  --warning-color: #ffc107;
+  --light-gray: #f8f9fa;
+  --medium-gray: #e9ecef;
+  --dark-gray: #343a40;
+  --border-color: #ced4da;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--light-gray);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px;
+  color: var(--dark-gray);
+  box-sizing: border-box;
+}
+
+.container {
+  background-color: white;
+  padding: 25px 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+  border-top: 5px solid var(--primary-color);
+  box-sizing: border-box;
+}
+
+h1 { margin-top: 0; margin-bottom: 10px; font-size: 1.8em; color: var(--dark-gray); }
+.subtitle { margin-bottom: 25px; color: #6c757d; }
+
+.warning-box {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+  border-left: 5px solid var(--warning-color);
+  padding: 15px;
+  border-radius: 4px;
+  text-align: left;
+  margin-bottom: 25px;
+  font-size: 0.95em;
+}
+
+.form-group { margin-bottom: 20px; text-align: left; }
+label { display: block; margin-bottom: 8px; font-weight: 600; }
+.input-field {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 1em;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.input-field.invalid-match { border-color: var(--error-color); }
+.input-field.valid-match { border-color: var(--success-color); }
+.input-field:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+#availability-status { text-align: right; font-size: 0.9em; margin-top: 5px; }
+#availability-status.checking { color: #6c757d; }
+#availability-status.available { color: var(--success-color); }
+#availability-status.taken { color: var(--error-color); }
+
+.checkbox-group { display: flex; align-items: center; margin-bottom: 25px; }
+.checkbox-group input { margin-right: 10px; }
+
+.main-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+.main-btn:hover:not(:disabled) { background-color: #0056b3; }
+.main-btn:active:not(:disabled) { transform: scale(0.98); }
+.main-btn:disabled { background-color: #a0c7ff; cursor: not-allowed; }
+
+.success-icon { font-size: 4em; color: var(--success-color); margin-bottom: 20px; }
+.wallet-address-box {
+  background-color: var(--light-gray);
+  border: 1px solid var(--medium-gray);
+  border-radius: 4px;
+  padding: 15px;
+  margin: 20px 0;
+  display: flex;
+  justify-content: space-between;
+}
+.wallet-address { font-family: monospace; font-size: 0.9em; word-break: break-all; }
+.copy-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--primary-color);
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.copy-btn:hover { background-color: var(--medium-gray); }
+
+.info-box { text-align: left; font-size: 0.9em; color: #6c757d; margin-bottom: 25px; }
