@@ -4,6 +4,8 @@
 
 A comprehensive blockchain-powered platform for domestic abuse victims to securely store evidence, send emergency alerts, and access help resources with complete anonymity and zero-knowledge architecture.
 
+**Created by The DUO**
+
 ---
 
 ## 📋 Table of Contents
@@ -147,13 +149,19 @@ cd ../my-frontend
 npm install
 npm run dev
 
-# Start blockchain network (new terminal)
-cd ../blockchain/aegis-blockchain
+# Start blockchain network (new terminal - WSL2 required for Windows)
+# Windows users: Open WSL2 terminal first
+wsl  # (if on Windows)
+cd ~/blockchain/aegis-blockchain  # (WSL path)
+# OR for Mac/Linux users:
+# cd ../blockchain/aegis-blockchain
 npm install
 npx hardhat node
 
-# Deploy smart contract (new terminal)
-cd blockchain/aegis-blockchain
+# Deploy smart contract (new WSL2/terminal)
+# Windows users: Another WSL2 terminal
+wsl  # (if on Windows)
+cd ~/blockchain/aegis-blockchain
 npx hardhat run scripts/deploy.js --network localhost
 ```
 
@@ -232,9 +240,31 @@ Aegis-WomenSafety/
 ### System Requirements
 - **Node.js**: 16.0.0 or higher
 - **MongoDB**: 4.4 or higher
+- **WSL2**: Required for blockchain components (Windows users)
 - **RAM**: 4GB minimum, 8GB recommended
 - **Storage**: 2GB free space
-- **OS**: Windows 10+, macOS 10.15+, Ubuntu 18.04+
+- **OS**: Windows 10+ (with WSL2), macOS 10.15+, Ubuntu 18.04+
+
+### ⚠️ **Important for Windows Users**
+
+The blockchain components **must be run in WSL2** for proper functionality. Before proceeding:
+
+1. **Install WSL2**: Follow [Microsoft's WSL2 installation guide](https://docs.microsoft.com/en-us/windows/wsl/install)
+2. **Install Ubuntu**: `wsl --install -d Ubuntu` 
+3. **Copy blockchain folder to WSL**:
+   ```bash
+   # From Windows PowerShell
+   wsl
+   cd ~
+   cp -r /mnt/c/Users/[YourUsername]/Desktop/Aegis-WomenSafety/blockchain ./
+   ```
+4. **Install Node.js in WSL**:
+   ```bash
+   curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+   sudo apt-get install -y nodejs
+   ```
+
+All blockchain commands below should be run in WSL2, not Windows Command Prompt or PowerShell.
 
 ### Detailed Installation
 
@@ -283,9 +313,28 @@ npm run dev
 npm run build
 ```
 
-#### 4. Blockchain Setup
+#### 4. Blockchain Setup (WSL2 Required for Windows)
+
+**Windows Users - Copy to WSL2 First:**
 ```bash
-cd blockchain/aegis-blockchain
+# Open WSL2 terminal
+wsl
+
+# Navigate to home directory and copy blockchain folder
+cd ~
+cp -r /mnt/c/Users/[YourUsername]/Desktop/Aegis-WomenSafety/blockchain ./
+
+# Install Node.js if not already installed
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+```
+
+**All Users - Run in WSL2 (Windows) or Terminal (Mac/Linux):**
+```bash
+# Navigate to blockchain directory
+cd ~/blockchain/aegis-blockchain  # WSL2 path for Windows
+# OR
+cd blockchain/aegis-blockchain    # Direct path for Mac/Linux
 
 # Install Hardhat and dependencies
 npm install
@@ -293,12 +342,14 @@ npm install
 # Start local blockchain network
 npx hardhat node
 
-# Deploy contracts (in another terminal)
+# Deploy contracts (in another WSL2/terminal)
 npx hardhat run scripts/deploy.js --network localhost
 
 # Run tests
 npx hardhat test
 ```
+
+**Important**: The blockchain network must remain running in WSL2 for the entire application to function properly.
 
 ---
 
@@ -504,9 +555,15 @@ npm test
 npm run test:coverage
 ```
 
-#### Blockchain Tests
+#### Blockchain Tests (Run in WSL2 for Windows)
 ```bash
+# Windows users: Open WSL2 terminal
+wsl
+cd ~/blockchain/aegis-blockchain
+
+# Mac/Linux users:
 cd blockchain/aegis-blockchain
+
 npx hardhat test
 
 # Test with gas reporting
@@ -587,10 +644,16 @@ npm run build
 # Deploy dist/ folder to hosting platform
 ```
 
-#### 5. Smart Contract Deployment
+#### 5. Smart Contract Deployment (WSL2 Required for Windows)
 ```bash
 # Deploy to Polygon zkEVM mainnet
+# Windows users: Use WSL2 terminal
+wsl
+cd ~/blockchain/aegis-blockchain
+
+# Mac/Linux users:
 cd blockchain/aegis-blockchain
+
 npx hardhat run scripts/deploy.js --network polygon_zkevm
 
 # Update deployment.json with new addresses
@@ -629,97 +692,7 @@ docker-compose -f docker-compose.prod.yml up
 
 ---
 
-## 🤝 Contributing
 
-We welcome contributions to make AEGIS better for domestic abuse victims worldwide.
-
-### Development Process
-
-1. **Fork Repository**: Create your own fork
-2. **Create Branch**: `git checkout -b feature/your-feature`
-3. **Develop**: Write code, tests, documentation
-4. **Test**: Ensure all tests pass
-5. **Commit**: `git commit -m "Add your feature"`
-6. **Push**: `git push origin feature/your-feature`
-7. **Pull Request**: Submit PR with detailed description
-
-### Contribution Guidelines
-
-#### Code Standards
-- **JavaScript**: Use ES6+ features, async/await
-- **React**: Functional components with hooks
-- **Solidity**: Follow OpenZeppelin standards
-- **Comments**: Document complex logic
-- **Testing**: Include tests for new features
-
-#### Security Considerations
-- **No Hardcoded Keys**: Use environment variables
-- **Input Validation**: Sanitize all user inputs
-- **Error Handling**: Graceful failure, no data leaks
-- **Audit Trail**: Log security-relevant actions
-
-#### Documentation
-- **README Updates**: Keep documentation current
-- **Code Comments**: Explain security-critical sections
-- **API Documentation**: Document all endpoints
-- **Architecture Docs**: Update system diagrams
-
-### Areas for Contribution
-
-- **Mobile App**: React Native implementation
-- **Additional Blockchains**: Support for other networks
-- **Enhanced Steganography**: Advanced hiding techniques
-- **ML/AI Features**: Evidence analysis and categorization
-- **Accessibility**: Screen reader and disability support
-- **Internationalization**: Multi-language support
-- **Performance**: Optimization and caching
-- **Security Audits**: Code review and testing
-
----
-
-## 📄 License
-
-### MIT License
-
-```
-MIT License
-
-Copyright (c) 2025 AEGIS Development Team
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
----
-
-## 📞 Support & Resources
-
-### Getting Help
-- **Documentation**: This README and inline code comments
-- **Issues**: Report bugs via GitHub Issues
-- **Discussions**: Community support via GitHub Discussions
-- **Security**: Email security@aegis-platform.org for vulnerabilities
-
-### Victim Resources
-- **National Domestic Violence Hotline**: 1-800-799-7233
-- **Crisis Text Line**: Text HOME to 741741
-- **Local Resources**: [Directory of local support organizations]
-- **Legal Aid**: Information about evidence and legal proceedings
 
 ### Technical Resources
 - **Ethereum Documentation**: https://ethereum.org/developers
@@ -730,26 +703,13 @@ SOFTWARE.
 
 ---
 
-## 🌟 Acknowledgments
-
-AEGIS is built with support from:
-- **Open Source Community**: Libraries and tools that make this possible
-- **Victim Advocates**: Input on real-world needs and safety considerations
-- **Security Researchers**: Guidance on privacy and security best practices
-- **Blockchain Developers**: Infrastructure for decentralized evidence storage
-
-### Special Thanks
-- **Polygon Team**: For zkEVM technology enabling private blockchain anchoring
-- **MongoDB**: For flexible document storage supporting our data model
-- **Hardhat**: For development tools enabling smart contract testing
-- **React Team**: For the frontend framework powering our user interface
-
----
 
 **🛡️ AEGIS - Protecting victims through technology, privacy, and community support**
 
 *"Technology should empower the vulnerable, not exploit them. AEGIS exists to give domestic abuse victims the tools they need to document abuse, seek help, and rebuild their lives with dignity and safety."*
 
+**Created by The DUO Team**
+
 ---
 
-**Version**: 1.0.0 | **Last Updated**: October 11, 2025 | **License**: MIT
+**Version**: 1.0.0 | **Last Updated**: October 11, 2025 | **License**: MIT | **Team**: The DUO
