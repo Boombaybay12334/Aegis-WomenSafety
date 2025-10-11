@@ -18,16 +18,17 @@ main:has(.homepage) {
   overflow-x: hidden;
 }
 
-/* Navbar Styling - Light Blue */
+/* Navbar Styling - White (same as index.css) */
 .navbar {
-  background: linear-gradient(135deg, #38bdf8 0%, #7dd3fc 100%);
-  border-bottom: 2px solid rgba(191, 219, 254, 0.4);
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid rgba(226, 232, 240, 0.8);
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 1000;
-  box-shadow: 0 4px 25px rgba(56, 189, 248, 0.3);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .navbar-container {
@@ -42,10 +43,18 @@ main:has(.homepage) {
 .navbar-logo a {
   font-size: 2rem;
   font-weight: 900;
-  color: #ffffff;
+  color: #3b82f6;
   text-decoration: none;
   letter-spacing: -0.03em;
-  text-shadow: 0 2px 10px rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar-logo a img {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
 }
 
 .navbar-menu {
@@ -59,13 +68,12 @@ main:has(.homepage) {
 
 .navbar-menu li a {
   text-decoration: none;
-  color: #ffffff;
+  color: #1e293b;
   font-weight: 600;
   font-size: 1rem;
   transition: all 0.3s ease;
   cursor: pointer;
   position: relative;
-  opacity: 0.95;
 }
 
 .navbar-menu li a::after {
@@ -75,7 +83,7 @@ main:has(.homepage) {
   left: 0;
   width: 0;
   height: 2px;
-  background: #ffffff;
+  background: #3b82f6;
   transition: width 0.3s ease;
 }
 
@@ -84,16 +92,16 @@ main:has(.homepage) {
 }
 
 .navbar-menu li a:hover {
-  opacity: 1;
+  color: #3b82f6;
 }
 
 .helpline-link {
-  color: #fef2f2 !important;
+  color: #dc2626 !important;
   font-weight: 700 !important;
-  background-color: rgba(254, 242, 242, 0.2);
+  background-color: rgba(254, 242, 242, 0.6);
   padding: 0.5rem 1rem;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(220, 38, 38, 0.3);
 }
 
 .helpline-link::after {
@@ -101,24 +109,25 @@ main:has(.homepage) {
 }
 
 .helpline-link:hover {
-  background-color: rgba(254, 242, 242, 0.3);
+  background-color: rgba(254, 242, 242, 0.9);
+  color: #b91c1c !important;
 }
 
 .navbar-login-btn {
-  background-color: #ffffff;
-  color: #38bdf8 !important;
+  background-color: #3b82f6;
+  color: #ffffff !important;
   padding: 0.7rem 1.8rem;
   border-radius: 10px;
   font-weight: 700;
   transition: all 0.3s ease;
   border: none;
-  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .navbar-login-btn:hover {
-  background-color: #f0f9ff;
+  background-color: #2563eb;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
 /* Full Screen Sections */

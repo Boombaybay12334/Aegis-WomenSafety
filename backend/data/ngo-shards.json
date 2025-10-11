@@ -111,8 +111,16 @@
       "version": 1,
       "partnerOrg": "Mock NGO Partner",
       "securityLevel": "encrypted_at_rest"
+    },
+    "ngo_0x9003b118daf2a4bc048f9bcfeb59c0d0329d11df_15_1760144669550": {
+      "walletAddress": "0x9003b118daf2a4bc048f9bcfeb59c0d0329d11df",
+      "shardB": "3:98027efa27a2357d391c64c091a71f652ae2d967ae8c987aa10cc70cbeb133ab",
+      "createdAt": "2025-10-11T01:04:29.550Z",
+      "version": 1,
+      "partnerOrg": "Mock NGO Partner",
+      "securityLevel": "encrypted_at_rest"
     }
   },
-  "counter": 14,
-  "lastUpdated": "2025-10-10T22:55:59.715Z"
+  "counter": 15,
+  "lastUpdated": "2025-10-11T01:04:29.550Z"
 }

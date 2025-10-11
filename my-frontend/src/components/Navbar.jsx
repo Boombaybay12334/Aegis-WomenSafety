@@ -23,12 +23,12 @@ export default function Navbar() {
       <nav className="nav-items">
         <Link to="/dashboard" className="nav-link">Dashboard</Link>
         <Link to="/upload" className="nav-link">Upload</Link>
-        <Link to="/settings" className="nav-link">⚙️ Settings</Link>
+        <Link to="/settings" className="nav-link">Settings</Link>
         <Link to="/emergency-sos" className="nav-link" style={{color: '#dc2626', fontWeight: '700'}}>
-          🚨 SOS
+           SOS
         </Link>
         <button onClick={handlePanicSwitch} className="panic-btn" title="Quick switch to Google">
-          🔒 Panic
+           Panic
         </button>
         <button onClick={handleLogout} className="logout-btn">
           Logout
