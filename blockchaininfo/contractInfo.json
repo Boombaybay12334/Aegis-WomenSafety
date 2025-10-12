@@ -1,0 +1,15 @@
+{
+  "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+  "chainId": 31337,
+  "network": "localhost",
+  "abi": [
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"evidenceId","type":"bytes32"},{"indexed":false,"internalType":"bytes32","name":"merkleRoot","type":"bytes32"},{"indexed":false,"internalType":"bytes32","name":"cidRoot","type":"bytes32"},{"indexed":false,"internalType":"uint64","name":"timestamp","type":"uint64"},{"indexed":true,"internalType":"address","name":"submitter","type":"address"}],"name":"EvidenceAnchored","type":"event"},
+    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"evidenceId","type":"bytes32"},{"indexed":true,"internalType":"address","name":"verifier","type":"address"}],"name":"EvidenceVerified","type":"event"},
+    {"inputs":[{"internalType":"bytes32","name":"evidenceId","type":"bytes32"},{"internalType":"bytes32","name":"merkleRoot","type":"bytes32"},{"internalType":"bytes32","name":"cidRoot","type":"bytes32"},{"internalType":"bytes32","name":"s3Key","type":"bytes32"},{"internalType":"bytes32","name":"policyId","type":"bytes32"}],"name":"anchorEvidence","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"name":"anchors","outputs":[{"internalType":"bytes32","name":"merkleRoot","type":"bytes32"},{"internalType":"bytes32","name":"cidRoot","type":"bytes32"},{"internalType":"bytes32","name":"s3Key","type":"bytes32"},{"internalType":"uint64","name":"timestamp","type":"uint64"},{"internalType":"bytes32","name":"policyId","type":"bytes32"},{"internalType":"address","name":"submitter","type":"address"},{"internalType":"bool","name":"exists","type":"bool"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getUserAnchors","outputs":[{"internalType":"bytes32[]","name":"","type":"bytes32[]"}],"stateMutability":"view","type":"function"},
+    {"inputs":[],"name":"totalAnchors","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"}],"name":"userAnchors","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"bytes32","name":"evidenceId","type":"bytes32"}],"name":"verifyEvidence","outputs":[{"components":[{"internalType":"bytes32","name":"merkleRoot","type":"bytes32"},{"internalType":"bytes32","name":"cidRoot","type":"bytes32"},{"internalType":"bytes32","name":"s3Key","type":"bytes32"},{"internalType":"uint64","name":"timestamp","type":"uint64"},{"internalType":"bytes32","name":"policyId","type":"bytes32"},{"internalType":"address","name":"submitter","type":"address"},{"internalType":"bool","name":"exists","type":"bool"}],"internalType":"struct EvidenceAnchor.Anchor","name":"","type":"tuple"}],"stateMutability":"nonpayable","type":"function"}
+  ]
+}

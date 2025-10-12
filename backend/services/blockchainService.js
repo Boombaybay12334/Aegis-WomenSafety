@@ -6,6 +6,7 @@
 
 const { ethers } = require('ethers');
 const { BLOCKCHAIN_CONFIG, getNetworkConfig, validateConfig } = require('../config/blockchain');
+const { contractInfo } = require('../config/blockchain');
 
 /**
  * NEW: Create blockchain provider
@@ -71,7 +72,6 @@ const checkWalletBalance = async (userWalletAddress) => {
       needsFunding: needsFunding,
       checkedAt: new Date().toISOString()
     };
-    
   } catch (error) {
     console.error('🚨 [Backend Blockchain] Balance check failed:', error);
     return {
@@ -82,6 +82,9 @@ const checkWalletBalance = async (userWalletAddress) => {
     };
   }
 };
+
+// Helper to get contract ABI from contractInfo
+const getContractABI = () => contractInfo.abi;
 
 /**
  * NEW: Fund user wallet with ETH for blockchain transactions

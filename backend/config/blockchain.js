@@ -8,30 +8,17 @@ const fs = require('fs');
 const path = require('path');
 
 // NEW: Load contract deployment data
-const loadDeploymentData = () => {
-  try {
-    const deploymentPath = path.join(__dirname, '../../blockchain/aegis-blockchain/deployment.json');
-    const deploymentData = JSON.parse(fs.readFileSync(deploymentPath, 'utf8'));
-    return deploymentData;
-  } catch (error) {
-    console.error('🚨 [Blockchain Config] Failed to load deployment data:', error.message);
-    // Fallback configuration
-    return {
-      address: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
-      network: 'localhost',
-      chainId: '31337'
-    };
-  }
-};
+// NEW: Load contract info from blockchaininfo/contractInfo.json
+const contractInfoPath = path.join(__dirname, '../../blockchaininfo/contractInfo.json');
+const contractInfo = JSON.parse(fs.readFileSync(contractInfoPath, 'utf8'));
 
 // NEW: Blockchain configuration
-const deploymentData = loadDeploymentData();
 
 const BLOCKCHAIN_CONFIG = {
   // Contract configuration
-  CONTRACT_ADDRESS: deploymentData.address,
-  CHAIN_ID: parseInt(deploymentData.chainId),
-  NETWORK_NAME: deploymentData.network,
+  CONTRACT_ADDRESS: contractInfo.address,
+  CHAIN_ID: parseInt(contractInfo.chainId),
+  NETWORK_NAME: contractInfo.network,
   
   // Network RPC URLs
   RPC_URL: {
@@ -137,5 +124,5 @@ module.exports = {
   BLOCKCHAIN_CONFIG,
   getNetworkConfig,
   validateConfig,
-  deploymentData
+  contractInfo
 };
