@@ -337,19 +337,19 @@ router.post('/update-shards', updateShardsLimiter, async (req, res) => {
       return res.status(404).json({ error: 'Account not found' });
     }
 
-    // Update Shard C in KMS
-    const newShardCId = await mockKMS.update(user.shardC_id, walletAddress, shardC);
+    console.log('🔄 [API] Updating shards for:', walletAddress);
 
-    // Update Shard B with NGO
-    const newShardBId = await mockNGO.updateShardB(user.shardB_id, walletAddress, shardB);
+    // Store new Shard C in NGO service
+    const newShardCId = await mockNGO.storeShardB(walletAddress, shardC);
+    console.log('✅ [API] New Shard C stored with ID:', newShardCId);
 
-    // Update user record
-    user.shardB_id = newShardBId;
+    // Update Shard B directly in MongoDB (no external service)
+    user.shardB = shardB;
     user.shardC_id = newShardCId;
     user.securityMeta.lastShardRotation = new Date();
     await user.save();
 
-    console.log(`🔄 [API] Shards updated for ${walletAddress} - New KMS ID: ${newShardCId}, New NGO ID: ${newShardBId}`);
+    console.log(`🔄 [API] Shards updated for ${walletAddress} - Shard B stored in MongoDB, Shard C ID: ${newShardCId}`);
 
     res.json({ success: true });
   } catch (error) {
