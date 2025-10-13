@@ -128,7 +128,12 @@ router.post('/create', createAccountLimiter, async (req, res) => {
     console.log('🔍 [API] Checking if account already exists...');
     // Check if account already exists
     const existingUser = await User.findByWallet(walletAddress);
+    console.log('🔍 [API] Database query result:', existingUser ? 'FOUND' : 'NOT FOUND');
     if (existingUser) {
+      console.log('🔍 [API] Existing user details:', {
+        wallet: existingUser.walletAddress,
+        created: existingUser.createdAt
+      });
       console.error('❌ [API] Account already exists for:', walletAddress);
       return res.status(409).json({ error: 'Account already exists' });
     }

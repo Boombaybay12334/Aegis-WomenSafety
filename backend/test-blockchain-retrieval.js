@@ -14,7 +14,7 @@ const { ethers } = require('ethers');
 const crypto = require('crypto');
 
 // Import blockchain config
-const BLOCKCHAIN_CONFIG = require('./config/blockchain');
+const { BLOCKCHAIN_CONFIG, getNetworkConfig, contractInfo } = require('./config/blockchain');
 
 // Create readline interface for user input
 const rl = readline.createInterface({
@@ -38,10 +38,11 @@ function deriveWalletFromPassphrase(passphrase) {
  * Get provider and contract instance
  */
 function getBlockchainConnection() {
-  const provider = new ethers.providers.JsonRpcProvider(BLOCKCHAIN_CONFIG.NETWORK.RPC_URL);
+  const networkConfig = getNetworkConfig();
+  const provider = new ethers.providers.JsonRpcProvider(networkConfig.rpcUrl);
   const contract = new ethers.Contract(
-    BLOCKCHAIN_CONFIG.CONTRACT.ADDRESS,
-    BLOCKCHAIN_CONFIG.CONTRACT.ABI,
+    BLOCKCHAIN_CONFIG.CONTRACT_ADDRESS,
+    contractInfo.abi,
     provider
   );
   return { provider, contract };
@@ -53,7 +54,7 @@ function getBlockchainConnection() {
 async function getUserEvidenceIds(contract, walletAddress) {
   try {
     console.log(`\n🔍 Fetching evidence IDs for wallet: ${walletAddress}`);
-    const evidenceIds = await contract.getUserEvidence(walletAddress);
+    const evidenceIds = await contract.getUserAnchors(walletAddress);
     return evidenceIds;
   } catch (error) {
     console.error('❌ Error fetching evidence IDs:', error.message);
@@ -67,15 +68,18 @@ async function getUserEvidenceIds(contract, walletAddress) {
 async function getEvidenceDetails(contract, evidenceId) {
   try {
     console.log(`\n📄 Fetching details for evidence ID: ${evidenceId}`);
-    const evidence = await contract.getEvidence(evidenceId);
+    // Use the public 'anchors' mapping to get evidence details
+    const evidence = await contract.anchors(evidenceId);
     
     return {
-      evidenceId: evidence.evidenceId,
-      userAddress: evidence.userAddress,
-      dataHash: evidence.dataHash,
+      evidenceId: evidenceId,
+      merkleRoot: evidence.merkleRoot,
+      cidRoot: evidence.cidRoot,
+      s3Key: evidence.s3Key,
       timestamp: evidence.timestamp.toNumber(),
-      blockNumber: evidence.blockNumber.toNumber(),
-      encryptedMetadata: evidence.encryptedMetadata
+      policyId: evidence.policyId,
+      submitter: evidence.submitter,
+      exists: evidence.exists
     };
   } catch (error) {
     console.error('❌ Error fetching evidence details:', error.message);
@@ -122,33 +126,22 @@ function formatTimestamp(timestamp) {
 /**
  * Display evidence details in a formatted way
  */
-function displayEvidenceDetails(evidence, decryptedMetadata) {
+function displayEvidenceDetails(evidence) {
   console.log('\n' + '='.repeat(80));
-  console.log('📋 EVIDENCE DETAILS');
+  console.log('📋 EVIDENCE DETAILS (From Blockchain)');
   console.log('='.repeat(80));
   
   console.log(`\n🆔 Evidence ID: ${evidence.evidenceId}`);
-  console.log(`👤 User Address: ${evidence.userAddress}`);
-  console.log(`#️⃣  Data Hash: ${evidence.dataHash}`);
+  console.log(`👤 Submitter Address: ${evidence.submitter}`);
+  console.log(`#️⃣  Merkle Root: ${evidence.merkleRoot}`);
+  console.log(`#️⃣  CID Root: ${evidence.cidRoot}`);
+  console.log(`#️⃣  S3 Key: ${evidence.s3Key}`);
+  console.log(`#️⃣  Policy ID: ${evidence.policyId}`);
   console.log(`⏰ Timestamp: ${formatTimestamp(evidence.timestamp)}`);
-  console.log(`🧱 Block Number: ${evidence.blockNumber}`);
+  console.log(`✅ Exists: ${evidence.exists}`);
   
-  if (decryptedMetadata) {
-    console.log('\n📦 DECRYPTED METADATA:');
-    console.log(JSON.stringify(decryptedMetadata, null, 2));
-    
-    if (decryptedMetadata.files && Array.isArray(decryptedMetadata.files)) {
-      console.log(`\n📁 Files (${decryptedMetadata.files.length}):`);
-      decryptedMetadata.files.forEach((file, index) => {
-        console.log(`  ${index + 1}. ${file.originalName || file.name || 'Unknown'}`);
-        console.log(`     Type: ${file.type || 'Unknown'}`);
-        console.log(`     Size: ${file.size ? (file.size / 1024).toFixed(2) + ' KB' : 'Unknown'}`);
-        if (file.hash) console.log(`     Hash: ${file.hash}`);
-      });
-    }
-  } else {
-    console.log('\n⚠️  Could not decrypt metadata (wrong passphrase or corrupted data)');
-  }
+  console.log('\n� Note: Encrypted evidence files are stored off-chain.');
+  console.log('   Use the backend API with your passphrase to decrypt and retrieve files.');
   
   console.log('\n' + '='.repeat(80));
 }
@@ -220,8 +213,7 @@ async function main() {
       const evidence = await getEvidenceDetails(contract, evidenceIds[0]);
       
       if (evidence) {
-        const decryptedMetadata = decryptMetadata(evidence.encryptedMetadata, passphrase);
-        displayEvidenceDetails(evidence, decryptedMetadata);
+        displayEvidenceDetails(evidence);
       }
     } else {
       // List all evidence IDs
@@ -237,8 +229,7 @@ async function main() {
         for (const evidenceId of evidenceIds) {
           const evidence = await getEvidenceDetails(contract, evidenceId);
           if (evidence) {
-            const decryptedMetadata = decryptMetadata(evidence.encryptedMetadata, passphrase);
-            displayEvidenceDetails(evidence, decryptedMetadata);
+            displayEvidenceDetails(evidence);
           }
         }
       } else {
@@ -246,8 +237,7 @@ async function main() {
         if (index >= 0 && index < evidenceIds.length) {
           const evidence = await getEvidenceDetails(contract, evidenceIds[index]);
           if (evidence) {
-            const decryptedMetadata = decryptMetadata(evidence.encryptedMetadata, passphrase);
-            displayEvidenceDetails(evidence, decryptedMetadata);
+            displayEvidenceDetails(evidence);
           }
         } else {
           console.error('❌ Invalid choice');

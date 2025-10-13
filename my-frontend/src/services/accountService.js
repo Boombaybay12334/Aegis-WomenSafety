@@ -2,26 +2,32 @@ import * as crypto from './cryptoService';
 import * as api from './apiService';
 
 const SESSION_KEY = 'aegis_session';
-const CURRENT_WALLET_KEY = 'aegis_current_wallet';
 
 export const signUp = async (passphrase) => {
   let masterKey, shardA, shardB, shardC;
   
   try {
+    console.log('🔵 [SignUp] Passphrase received:', passphrase); // DEBUG
     const wallet = crypto.generateWalletFromPassphrase(passphrase);
     const { address } = wallet;
+    console.log('🔵 [SignUp] Wallet generated:', address); // DEBUG
+    
     masterKey = crypto.generateMasterKey();
     
     // This line is now async and needs 'await'.
     [shardA, shardB, shardC] = await crypto.splitKey(masterKey);
 
+    // This will throw error if account exists in backend (409 status)
     await api.createAccount({ walletAddress: address, shardB, shardC });
+    
     const encryptedShardA = crypto.encryptShardA(shardA, passphrase);
     const userData = {
       walletAddress: address,
       encryptedShardA: encryptedShardA,
       createdAt: new Date().toISOString(),
     };
+    
+    // Always overwrite localStorage for this wallet address
     localStorage.setItem(`aegis_user_${address}`, JSON.stringify(userData));
     
     // Store encrypted Shard A for evidence encryption
@@ -117,15 +123,23 @@ export const createSession = (walletAddress, decryptedShardA) => {
     decryptedShardA,
     loggedInAt: new Date().toISOString(),
   };
+  // Only store session data in sessionStorage (cleared on tab close)
   sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
-  localStorage.setItem(CURRENT_WALLET_KEY, walletAddress);
+  
+  // Note: walletAddress and passphrase are stored in sessionStorage only
+  // They are cleared when browser tab closes
+  // localStorage keeps encrypted shards and keys for same-device login
 };
 
 export const logout = () => {
+  // Clear session data (wallet address, decrypted shard A)
   sessionStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem('passphrase');
-  localStorage.removeItem('encryptedShardA');
-  localStorage.removeItem(CURRENT_WALLET_KEY);
+  
+  // Note: We do NOT clear localStorage items like:
+  // - aegis_user_{address} (encrypted shard A, needed for same-device login)
+  // - encryptedShardA (needed for evidence encryption)
+  // These persist across sessions for same-device login
 };
 
 export const getSession = () => {

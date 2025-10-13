@@ -1,8 +1,9 @@
 // Quick database check script
+require('dotenv').config();
 const mongoose = require('mongoose');
 
 // Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/aegis', {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/aegis', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 });

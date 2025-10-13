@@ -41,7 +41,10 @@ function App() {
   };
   
   const handleLoginSuccess = () => {
+    console.log('🟢 [App] handleLoginSuccess called');
+    console.log('🟢 [App] Current session:', getSession());
     setIsLoggedIn(true);
+    console.log('🟢 [App] isLoggedIn state set to true');
   };
 
   // Show navbar only on protected pages

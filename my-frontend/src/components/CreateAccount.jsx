@@ -18,6 +18,7 @@ export default function CreateAccount({ onSignUpSuccess }) {
   const [showPassphrase, setShowPassphrase] = useState(false);
   const [available, setAvailable] = useState({ status: 'idle', message: '' });
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // NEW: Prevent double submission
   const [feedback, setFeedback] = useState('');
   const navigate = useNavigate();
 
@@ -41,34 +42,42 @@ export default function CreateAccount({ onSignUpSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isButtonDisabled) return;
+    if (isButtonDisabled || isSubmitting) return; // Prevent double submission
     
+    setIsSubmitting(true); // Lock the form
     setIsLoading(true);
     setFeedback('');
     
     try {
-      console.log('Starting signup...'); // Debug
+      console.log('🔵 [CreateAccount] Starting signup...');
       
-      await accountService.signUp(passphrase);
+      // CLEAR ALL STORAGE BEFORE CREATING NEW ACCOUNT
+      console.log('🧹 [CreateAccount] Clearing all storage...');
+      localStorage.clear();
+      sessionStorage.clear();
+      console.log('✅ [CreateAccount] Storage cleared!');
       
-      console.log('Signup successful!'); // Debug
+      const result = await accountService.signUp(passphrase);
+      
+      console.log('🟢 [CreateAccount] Signup successful! Result:', result); // Debug
+      console.log('🟢 [CreateAccount] Session created:', accountService.getSession()); // Debug
       
       // Set last login date
       localStorage.setItem('lastLoginDate', new Date().toISOString());
       
       // IMPORTANT: Call onSignUpSuccess to update App.jsx state
+      console.log('🟢 [CreateAccount] Calling onSignUpSuccess callback...'); // Debug
       onSignUpSuccess();
       
-      // Small delay to let state update, then navigate
-      setTimeout(() => {
-        console.log('Navigating to dashboard...'); // Debug
-        navigate('/dashboard', { replace: true });
-      }, 100);
+      console.log('🟢 [CreateAccount] Navigating to dashboard...'); // Debug
+      // Navigate immediately without delay
+      navigate('/dashboard', { replace: true });
       
     } catch (error) {
-      console.error('Sign-up failed:', error);
+      console.error('🔴 [CreateAccount] Sign-up failed:', error);
       setFeedback(error.message || 'An error occurred. Please try again.');
       setIsLoading(false);
+      setIsSubmitting(false); // Unlock the form on error
     }
   };
 
