@@ -10,7 +10,7 @@ const Evidence = require('../models/Evidence');
 const User = require('../models/User');
 const { availabilityLimiter, generalLimiter } = require('../middleware/rateLimiter');
 // NEW: Import blockchain service
-const { fundUserWallet, processBlockchainData } = require('../services/blockchainService');
+const { fundUserWallet, ensureBalanceForAnchoring, processBlockchainData } = require('../services/blockchainService');
 
 const router = express.Router();
 
@@ -22,6 +22,72 @@ const isValidAddress = (address) => {
 const isValidEvidenceId = (evidenceId) => {
   return typeof evidenceId === 'string' && evidenceId.startsWith('evidence_') && evidenceId.length > 10;
 };
+
+/**
+ * POST /api/v1/evidence/prepare-anchoring
+ * Ensure wallet has sufficient balance before anchoring
+ * This should be called by the frontend BEFORE attempting to anchor evidence
+ */
+router.post('/prepare-anchoring', generalLimiter, async (req, res) => {
+  try {
+    console.log('⚓ [Evidence] Prepare anchoring request received');
+    const { walletAddress } = req.body;
+
+    // Input validation
+    if (!walletAddress) {
+      console.error('❌ [Evidence] Missing wallet address');
+      return res.status(400).json({ error: 'Missing required field: walletAddress' });
+    }
+
+    if (!isValidAddress(walletAddress)) {
+      console.error('❌ [Evidence] Invalid wallet address:', walletAddress);
+      return res.status(400).json({ error: 'Invalid wallet address format' });
+    }
+
+    // Verify user exists
+    const user = await User.findByWallet(walletAddress);
+    if (!user) {
+      console.error('❌ [Evidence] User not found:', walletAddress);
+      return res.status(404).json({ error: 'User account not found' });
+    }
+
+    console.log('✅ [Evidence] User found, checking balance for anchoring...');
+
+    // Ensure balance for anchoring
+    const balanceCheckResult = await ensureBalanceForAnchoring(walletAddress, `anchoring_prep_${Date.now()}`);
+
+    if (balanceCheckResult.success) {
+      console.log('✅ [Evidence] Wallet ready for anchoring');
+      return res.status(200).json({
+        success: true,
+        ready: true,
+        currentBalance: balanceCheckResult.currentBalance,
+        minRequired: balanceCheckResult.minRequired,
+        fundingPerformed: balanceCheckResult.fundingPerformed,
+        message: balanceCheckResult.fundingPerformed 
+          ? 'Wallet funded and ready for anchoring' 
+          : 'Wallet has sufficient balance for anchoring'
+      });
+    } else {
+      console.error('❌ [Evidence] Failed to prepare wallet for anchoring:', balanceCheckResult.error);
+      return res.status(500).json({
+        success: false,
+        ready: false,
+        error: balanceCheckResult.error,
+        errorType: balanceCheckResult.errorType
+      });
+    }
+
+  } catch (error) {
+    console.error('🚨 [Evidence] Prepare anchoring failed:', error.message);
+    return res.status(500).json({
+      success: false,
+      ready: false,
+      error: 'Failed to prepare wallet for anchoring',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
 
 /**
  * POST /api/v1/evidence/upload
@@ -103,37 +169,14 @@ router.post('/upload', generalLimiter, async (req, res) => {
 
     console.log(`📤 [Evidence] Upload successful: ${evidence.evidenceId} (${files.length} files, ${evidence.metadata.totalSize} bytes)`);
 
-    // NEW: Fund user wallet after successful evidence upload
-    let fundingResult = null;
-    try {
-      console.log('💳 [Evidence] Initiating wallet funding...');
-      fundingResult = await fundUserWallet(walletAddress, evidence.evidenceId);
-      
-      if (fundingResult.success && !fundingResult.skipped) {
-        console.log(`✅ [Evidence] Wallet funding successful: ${fundingResult.transactionHash}`);
-      } else if (fundingResult.skipped) {
-        console.log(`ℹ️  [Evidence] Wallet funding skipped: ${fundingResult.reason}`);
-      } else {
-        console.warn(`⚠️ [Evidence] Wallet funding failed: ${fundingResult.error}`);
-      }
-    } catch (fundingError) {
-      console.warn('⚠️ [Evidence] Wallet funding failed with exception:', fundingError.message);
-      fundingResult = {
-        success: false,
-        error: fundingError.message,
-        errorType: 'FUNDING_EXCEPTION'
-      };
-    }
-
     res.status(201).json({
       success: true,
       evidenceId: evidence.evidenceId,
       filesUploaded: files.length,
       totalSize: evidence.metadata.totalSize,
       steganographyEnabled: evidence.steganographyEnabled,
-      // NEW: Include blockchain and funding results
-      blockchain: blockchainData,
-      funding: fundingResult
+      // NEW: Include blockchain results
+      blockchain: blockchainData
     });
 
   } catch (error) {

@@ -151,8 +151,48 @@
       "version": 1,
       "partnerOrg": "Mock NGO Partner",
       "securityLevel": "encrypted_at_rest"
+    },
+    "ngo_0x56c83d6bf5907cecc55f2bf33a91697245395f9b_20_1760365832132": {
+      "walletAddress": "0x56c83d6bf5907cecc55f2bf33a91697245395f9b",
+      "shardB": "3:7096f6454fffe1b8e6d216afc3f53290615c6405ddca53af846c1087699cdad7",
+      "createdAt": "2025-10-13T14:30:32.132Z",
+      "version": 1,
+      "partnerOrg": "Mock NGO Partner",
+      "securityLevel": "encrypted_at_rest"
+    },
+    "ngo_0xc5f0c32d02e86517fde34bd820ae57d223cb239c_21_1760375037074": {
+      "walletAddress": "0xc5f0c32d02e86517fde34bd820ae57d223cb239c",
+      "shardB": "3:7abde719d7b17f9869034dbc52667d36498caaa466a39b192393cce0b3d124e2",
+      "createdAt": "2025-10-13T17:03:57.074Z",
+      "version": 1,
+      "partnerOrg": "Mock NGO Partner",
+      "securityLevel": "encrypted_at_rest"
+    },
+    "ngo_0x850740edee3de1a780ee21686537d1632c5fc1c5_22_1760375512536": {
+      "walletAddress": "0x850740edee3de1a780ee21686537d1632c5fc1c5",
+      "shardB": "3:5c68990fa7c0e8ed95adc574b553107f5fdfcb74009db0fa498d1cca8a816e0a",
+      "createdAt": "2025-10-13T17:11:52.536Z",
+      "version": 1,
+      "partnerOrg": "Mock NGO Partner",
+      "securityLevel": "encrypted_at_rest"
+    },
+    "ngo_0x6da6e110536c0f51079da598ff9c8e79d3cdcb4e_23_1760376917390": {
+      "walletAddress": "0x6da6e110536c0f51079da598ff9c8e79d3cdcb4e",
+      "shardB": "3:3e47a544f3a812be1e0d608e67e330ee8ec8f7e1d6fa0d94ccc810b346847444",
+      "createdAt": "2025-10-13T17:35:17.390Z",
+      "version": 1,
+      "partnerOrg": "Mock NGO Partner",
+      "securityLevel": "encrypted_at_rest"
+    },
+    "ngo_0x30661aa17a16a82ea2ea7e7ba1526b091775418f_24_1760376922639": {
+      "walletAddress": "0x30661aa17a16a82ea2ea7e7ba1526b091775418f",
+      "shardB": "3:d8aa1694aac61e6963669676f46a4859582c3446674da85a43d5631aa39560a1",
+      "createdAt": "2025-10-13T17:35:22.639Z",
+      "version": 1,
+      "partnerOrg": "Mock NGO Partner",
+      "securityLevel": "encrypted_at_rest"
     }
   },
-  "counter": 19,
-  "lastUpdated": "2025-10-12T17:55:45.748Z"
+  "counter": 24,
+  "lastUpdated": "2025-10-13T17:35:22.639Z"
 }

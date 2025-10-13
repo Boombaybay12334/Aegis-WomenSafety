@@ -14,6 +14,7 @@ const { ethers } = require('ethers');
 const User = require('../models/User');
 const mockKMS = require('../services/mockKMS');
 const mockNGO = require('../services/mockNGO');
+const { fundUserWallet } = require('../services/blockchainService');
 const {
   availabilityLimiter,
   createAccountLimiter,
@@ -155,9 +156,34 @@ router.post('/create', createAccountLimiter, async (req, res) => {
     console.log(`✅ [API] Account created for ${walletAddress} with Shard C ID: ${shardCId}`);
     console.log(`✅ [API] Shard B stored directly in MongoDB`);
 
+    // NEW: Fund user wallet on account creation
+    let fundingResult = null;
+    try {
+      console.log('💰 [API] Checking wallet balance and funding if needed...');
+      fundingResult = await fundUserWallet(walletAddress, 'account_creation');
+      
+      if (fundingResult.success) {
+        if (fundingResult.skipped) {
+          console.log(`✅ [API] Wallet funding skipped: ${fundingResult.reason}`);
+        } else {
+          console.log(`✅ [API] Wallet funded successfully with ${fundingResult.amountSent} ETH`);
+          console.log(`📊 [API] Balance: ${fundingResult.previousBalance} → ${fundingResult.newBalance} ETH`);
+        }
+      } else {
+        console.warn(`⚠️ [API] Wallet funding failed: ${fundingResult.error}`);
+      }
+    } catch (fundingError) {
+      console.warn('⚠️ [API] Wallet funding error (non-critical):', fundingError.message);
+      fundingResult = {
+        success: false,
+        error: fundingError.message
+      };
+    }
+
     res.status(201).json({
       success: true,
-      walletAddress: walletAddress.toLowerCase()
+      walletAddress: walletAddress.toLowerCase(),
+      funding: fundingResult
     });
   } catch (error) {
     console.error('🚨 [API] Account creation failed:', error.message);

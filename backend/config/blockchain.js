@@ -30,8 +30,9 @@ const BLOCKCHAIN_CONFIG = {
   // Funding wallet configuration (for user wallet funding)
   FUNDING_WALLET: {
     PRIVATE_KEY: process.env.FUNDING_WALLET_PRIVATE_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
-    FUNDING_AMOUNT: process.env.FUNDING_AMOUNT || '0.001', // ETH amount to fund user wallets
-    MIN_BALANCE_THRESHOLD: process.env.MIN_BALANCE_THRESHOLD || '0.0005' // Minimum balance before funding
+    TARGET_BALANCE: process.env.TARGET_WALLET_BALANCE || '1', // Target balance for user wallets
+    MIN_BALANCE_THRESHOLD: process.env.MIN_BALANCE_THRESHOLD || '1', // Minimum balance before funding
+    MIN_BALANCE_FOR_ANCHORING: process.env.MIN_BALANCE_FOR_ANCHORING || '0.5' // Min balance required for anchoring
   },
   
   // Gas configuration
@@ -107,7 +108,9 @@ const logConfiguration = () => {
   console.log(`   Contract: ${BLOCKCHAIN_CONFIG.CONTRACT_ADDRESS}`);
   console.log(`   Funding enabled: ${BLOCKCHAIN_CONFIG.ENABLE_FUNDING}`);
   console.log(`   Blockchain enabled: ${BLOCKCHAIN_CONFIG.ENABLE_BLOCKCHAIN}`);
-  console.log(`   Funding amount: ${BLOCKCHAIN_CONFIG.FUNDING_WALLET.FUNDING_AMOUNT} ETH`);
+  console.log(`   Target wallet balance: ${BLOCKCHAIN_CONFIG.FUNDING_WALLET.TARGET_BALANCE} ETH`);
+  console.log(`   Min balance threshold: ${BLOCKCHAIN_CONFIG.FUNDING_WALLET.MIN_BALANCE_THRESHOLD} ETH`);
+  console.log(`   Min balance for anchoring: ${BLOCKCHAIN_CONFIG.FUNDING_WALLET.MIN_BALANCE_FOR_ANCHORING} ETH`);
   
   const isValid = validateConfig();
   if (isValid) {

@@ -7,7 +7,7 @@
 
 import { getSession } from './accountService';
 import { combineShards, encryptFile, decryptFile } from './cryptoService';
-import { getShardForEncryption, uploadEvidenceMetadata, getEvidenceListAPI, getEvidenceAPI } from './apiService';
+import { getShardForEncryption, uploadEvidenceMetadata, getEvidenceListAPI, getEvidenceAPI, prepareForAnchoring } from './apiService';
 // NEW: Import blockchain service
 import { anchorEvidenceToBlockchain } from './blockchainService';
 
@@ -104,6 +104,21 @@ export const uploadEvidence = async (files, coverImage, description = '') => {
     let blockchainResult = null;
     try {
       console.log('⛓️  [Evidence] Starting blockchain anchoring...');
+      
+      // NEW: Ensure wallet has sufficient balance before anchoring
+      console.log('💰 [Evidence] Checking wallet balance and funding if needed...');
+      const prepareResult = await prepareForAnchoring(walletAddress);
+      
+      if (prepareResult.success && prepareResult.ready) {
+        console.log('✅ [Evidence] Wallet ready for anchoring');
+        if (prepareResult.fundingPerformed) {
+          console.log(`💰 [Evidence] Wallet was funded: ${prepareResult.currentBalance} ETH`);
+        } else {
+          console.log(`💰 [Evidence] Wallet has sufficient balance: ${prepareResult.currentBalance} ETH`);
+        }
+      } else {
+        console.warn('⚠️ [Evidence] Failed to prepare wallet for anchoring, will attempt anyway...');
+      }
       
       // Generate temporary evidence ID for blockchain anchoring
       const tempEvidenceId = `evidence_${walletAddress.slice(2, 10)}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;

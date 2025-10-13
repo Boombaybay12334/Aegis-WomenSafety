@@ -35,7 +35,8 @@ function App() {
 
   const handleLogout = () => {
     logout();
-    setIsLoggedIn(false);
+    console.log('Session after logout:', getSession()); // Log to verify session cleared
+    setIsLoggedIn(false); // This triggers re-render
     navigate('/login');
   };
   

@@ -142,6 +142,24 @@ const fundUserWallet = async (userWalletAddress, evidenceId) => {
     
     console.log(`💸 [Backend Blockchain] Wallet needs funding (balance: ${balanceCheck.balance} ETH < ${balanceCheck.threshold} ETH)`);
     
+    // Calculate funding amount needed to reach target balance
+    const targetBalance = BLOCKCHAIN_CONFIG.FUNDING_WALLET.TARGET_BALANCE;
+    const currentBalance = parseFloat(balanceCheck.balance);
+    const fundingAmount = Math.max(0, parseFloat(targetBalance) - currentBalance);
+    
+    if (fundingAmount <= 0) {
+      console.log(`💰 [Backend Blockchain] Wallet already at or above target balance: ${balanceCheck.balance} ETH`);
+      return {
+        success: true,
+        skipped: true,
+        reason: 'Wallet at or above target balance',
+        currentBalance: balanceCheck.balance,
+        targetBalance: targetBalance
+      };
+    }
+    
+    console.log(`💸 [Backend Blockchain] Need to fund ${fundingAmount.toFixed(4)} ETH to reach target of ${targetBalance} ETH`);
+    
     // Create funding wallet
     const fundingWallet = createFundingWallet();
     if (!fundingWallet) {
@@ -153,18 +171,17 @@ const fundUserWallet = async (userWalletAddress, evidenceId) => {
     // Check funding wallet balance
     const fundingBalance = await fundingWallet.getBalance();
     const fundingBalanceEth = ethers.utils.formatEther(fundingBalance);
-    const fundingAmount = BLOCKCHAIN_CONFIG.FUNDING_WALLET.FUNDING_AMOUNT;
     
     console.log(`🏦 [Backend Blockchain] Funding wallet balance: ${fundingBalanceEth} ETH`);
     
-    if (parseFloat(fundingBalanceEth) < parseFloat(fundingAmount)) {
-      throw new Error(`Insufficient funding wallet balance: ${fundingBalanceEth} ETH < ${fundingAmount} ETH`);
+    if (parseFloat(fundingBalanceEth) < fundingAmount) {
+      throw new Error(`Insufficient funding wallet balance: ${fundingBalanceEth} ETH < ${fundingAmount} ETH needed`);
     }
     
     // Prepare funding transaction
-    const fundingAmountWei = ethers.utils.parseEther(fundingAmount);
+    const fundingAmountWei = ethers.utils.parseEther(fundingAmount.toString());
     
-    console.log(`💸 [Backend Blockchain] Preparing to send ${fundingAmount} ETH to ${userWalletAddress}`);
+    console.log(`💸 [Backend Blockchain] Preparing to send ${fundingAmount.toFixed(4)} ETH to ${userWalletAddress}`);
     
     // Execute funding transaction with retry logic
     let transaction;
@@ -215,9 +232,10 @@ const fundUserWallet = async (userWalletAddress, evidenceId) => {
       transactionHash: transaction.hash,
       blockNumber: receipt.blockNumber,
       gasUsed: receipt.gasUsed.toString(),
-      amountSent: fundingAmount,
+      amountSent: fundingAmount.toFixed(4),
       previousBalance: balanceCheck.balance,
       newBalance: newBalanceCheck.success ? newBalanceCheck.balance : 'unknown',
+      targetBalance: BLOCKCHAIN_CONFIG.FUNDING_WALLET.TARGET_BALANCE,
       executionTime: executionTime,
       evidenceId: evidenceId,
       fundedAt: new Date().toISOString()
@@ -286,7 +304,8 @@ const getBlockchainServiceHealth = async () => {
         enabled: BLOCKCHAIN_CONFIG.ENABLE_FUNDING,
         walletStatus: fundingWalletStatus,
         walletBalance: fundingBalance,
-        fundingAmount: BLOCKCHAIN_CONFIG.FUNDING_WALLET.FUNDING_AMOUNT
+        targetBalance: BLOCKCHAIN_CONFIG.FUNDING_WALLET.TARGET_BALANCE,
+        minBalanceThreshold: BLOCKCHAIN_CONFIG.FUNDING_WALLET.MIN_BALANCE_THRESHOLD
       },
       contract: {
         address: BLOCKCHAIN_CONFIG.CONTRACT_ADDRESS,
@@ -358,9 +377,101 @@ const processBlockchainData = (blockchainData) => {
   }
 };
 
+/**
+ * NEW: Ensure wallet has sufficient balance for anchoring
+ * Checks balance and funds if needed before evidence anchoring
+ * @param {string} userWalletAddress - User's wallet address
+ * @param {string} evidenceId - Evidence ID for logging
+ * @returns {Promise<Object>} Balance check and funding result
+ */
+const ensureBalanceForAnchoring = async (userWalletAddress, evidenceId) => {
+  const startTime = Date.now();
+  
+  try {
+    console.log(`⚓ [Backend Blockchain] Ensuring balance for anchoring: ${userWalletAddress}`);
+    console.log(`📋 Evidence ID: ${evidenceId}`);
+    
+    if (!BLOCKCHAIN_CONFIG.ENABLE_BLOCKCHAIN) {
+      return {
+        success: true,
+        skipped: true,
+        reason: 'Blockchain integration disabled'
+      };
+    }
+    
+    // Check current wallet balance
+    const balanceCheck = await checkWalletBalance(userWalletAddress);
+    if (!balanceCheck.success) {
+      throw new Error(`Balance check failed: ${balanceCheck.error}`);
+    }
+    
+    const currentBalance = parseFloat(balanceCheck.balance);
+    const minBalanceForAnchoring = parseFloat(BLOCKCHAIN_CONFIG.FUNDING_WALLET.MIN_BALANCE_FOR_ANCHORING);
+    
+    console.log(`💰 [Backend Blockchain] Current balance: ${currentBalance} ETH`);
+    console.log(`⚓ [Backend Blockchain] Minimum required for anchoring: ${minBalanceForAnchoring} ETH`);
+    
+    // If balance is sufficient, no funding needed
+    if (currentBalance >= minBalanceForAnchoring) {
+      console.log(`✅ [Backend Blockchain] Sufficient balance for anchoring (${currentBalance} ETH >= ${minBalanceForAnchoring} ETH)`);
+      return {
+        success: true,
+        sufficientBalance: true,
+        currentBalance: balanceCheck.balance,
+        minRequired: minBalanceForAnchoring.toString(),
+        fundingPerformed: false,
+        executionTime: Date.now() - startTime
+      };
+    }
+    
+    // Balance is insufficient, need to fund
+    console.log(`⚠️ [Backend Blockchain] Insufficient balance for anchoring (${currentBalance} ETH < ${minBalanceForAnchoring} ETH)`);
+    console.log(`💰 [Backend Blockchain] Initiating funding before anchoring...`);
+    
+    if (!BLOCKCHAIN_CONFIG.ENABLE_FUNDING) {
+      throw new Error('Wallet funding is disabled but balance is insufficient for anchoring');
+    }
+    
+    // Fund the wallet
+    const fundingResult = await fundUserWallet(userWalletAddress, evidenceId);
+    
+    if (!fundingResult.success) {
+      throw new Error(`Funding failed: ${fundingResult.error}`);
+    }
+    
+    const executionTime = Date.now() - startTime;
+    console.log(`✅ [Backend Blockchain] Wallet funded successfully before anchoring`);
+    console.log(`⏱️ Total execution time: ${executionTime}ms`);
+    
+    return {
+      success: true,
+      sufficientBalance: true,
+      currentBalance: fundingResult.newBalance || fundingResult.previousBalance,
+      minRequired: minBalanceForAnchoring.toString(),
+      fundingPerformed: true,
+      fundingResult: fundingResult,
+      executionTime: executionTime
+    };
+    
+  } catch (error) {
+    const executionTime = Date.now() - startTime;
+    console.error('🚨 [Backend Blockchain] Failed to ensure balance for anchoring:', error);
+    
+    return {
+      success: false,
+      error: error.message,
+      errorType: error.code || 'BALANCE_CHECK_FAILED',
+      userWalletAddress: userWalletAddress,
+      evidenceId: evidenceId,
+      executionTime: executionTime
+    };
+  }
+};
+
 module.exports = {
   fundUserWallet,
   checkWalletBalance,
+  ensureBalanceForAnchoring,
   getBlockchainServiceHealth,
   processBlockchainData,
   createProvider,

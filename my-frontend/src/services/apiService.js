@@ -169,6 +169,35 @@ export const uploadEvidenceMetadata = async (evidenceData) => {
     return result;
     
   } catch (error) {
+    console.error(`[API] Evidence upload failed:`, error);
+    throw error;
+  }
+};
+
+/**
+ * NEW: Prepare wallet for evidence anchoring
+ * Ensures wallet has sufficient balance before anchoring
+ */
+export const prepareForAnchoring = async (walletAddress) => {
+  try {
+    console.log(`[API] Preparing wallet for anchoring: ${walletAddress}`);
+    
+    const response = await fetch(`${EVIDENCE_API_URL}/prepare-anchoring`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ walletAddress })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to prepare wallet for anchoring');
+    }
+    
+    const result = await response.json();
+    console.log(`[API] Wallet prepared for anchoring:`, result);
+    return result;
+    
+  } catch (error) {
     console.error(`[API] Upload failed:`, error);
     console.error(`[API] Error details:`, {
       message: error.message,
