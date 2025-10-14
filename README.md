@@ -668,74 +668,56 @@ The backend uses a `.env` file for configuration. A sample `.env` file already e
 
 # SERVER CONFIGURATIONwsl
 
-# =====================================================
+# AEGIS - Women Safety Platform
 
-PORT=5000# Navigate to home directory and copy blockchain folder
+**Anonymous Evidence Gathering & Incident Reporting System**
 
-NODE_ENV=developmentcd ~
+A comprehensive blockchain-powered platform for domestic abuse victims to securely store evidence, send emergency alerts, and access help resources with complete anonymity and zero-knowledge architecture.
 
-FRONTEND_URL=http://localhost:5173cp -r /mnt/c/Users/[YourUsername]/Desktop/Aegis-WomenSafety/blockchain ./
+**Created by The DUO**
 
+---
 
+## Table of Contents
 
-# =====================================================# Install Node.js if not already installed
+- [Project Overview](#project-overview)
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+- [Quick Start](#quick-start)
+- [Project Structure](#project-structure)
+- [Installation & Setup](#installation--setup)
+- [Environment Configuration](#environment-configuration)
+- [Blockchain Setup (WSL2 for Windows)](#blockchain-setup-wsl2-for-windows)
+- [Blockchain Integration](#blockchain-integration)
+- [Security Features](#security-features)
+- [Usage Guide](#usage-guide)
+- [Testing & Verification](#testing--verification)
+- [Deployment](#deployment)
+- [License](#license)
 
-# DATABASE CONFIGURATIONcurl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+---
 
-# =====================================================sudo apt-get install -y nodejs
+## Project Overview
 
-# Local MongoDB```
+AEGIS is a revolutionary women safety platform that combines:
+- **Zero-Knowledge Security**: Backend never sees your data or passwords
+- **Blockchain Anchoring**: Evidence permanently recorded on Polygon zkEVM
+- **Anonymous Accounts**: No personal information required
+- **Evidence Storage**: Encrypted file storage on IPFS via Filebase
+- **Emergency System**: SOS alerts with dead man's switch
+- **Cross-Device Access**: Secure account recovery using Shamir's Secret Sharing
 
-MONGODB_URI=mongodb://localhost:27017/aegis
+### Why AEGIS?
 
-**All Users - Run in WSL2 (Windows) or Terminal (Mac/Linux):**
+Traditional evidence storage platforms are vulnerable to:
+- Server breaches exposing victim data
+- Legal pressure to reveal information
+- Platform shutdown losing evidence
+- Centralized control by authorities
 
-# OR MongoDB Atlas (Cloud)```bash
+AEGIS solves these problems with decentralized, encrypted, blockchain-anchored evidence storage.
 
-# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/aegis?retryWrites=true&w=majority# Navigate to blockchain directory
-
-cd ~/blockchain/aegis-blockchain  # WSL2 path for Windows
-
-# =====================================================# OR
-
-# BLOCKCHAIN CONFIGURATIONcd blockchain/aegis-blockchain    # Direct path for Mac/Linux
-
-# =====================================================
-
-# RPC URL for blockchain connection# Install Hardhat and dependencies
-
-# For local development (Hardhat)npm install
-
-BLOCKCHAIN_RPC_URL=http://localhost:8545
-
-# Start local blockchain network
-
-# For production (Polygon zkEVM)npx hardhat node
-
-# BLOCKCHAIN_RPC_URL=https://zkevm-rpc.com
-
-# Deploy contracts (in another WSL2/terminal)
-
-BLOCKCHAIN_NETWORK=localhostnpx hardhat run scripts/deploy.js --network localhost
-
-ENABLE_BLOCKCHAIN=true
-
-ENABLE_WALLET_FUNDING=true# Run tests
-
-npx hardhat test
-
-# =====================================================```
-
-# WALLET FUNDING CONFIGURATION
-
-# =====================================================**Important**: The blockchain network must remain running in WSL2 for the entire application to function properly.
-
-# Private key for funding user wallets
-
-# DEFAULT: Hardhat's first default account (10,000 ETH)---
-
-# WARNING: Change this for production!
-
+---
 FUNDING_WALLET_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80## ⚙️ Configuration
 
 
