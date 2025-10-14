@@ -21,13 +21,26 @@ const FileSchema = new mongoose.Schema({
   fileSize: {
     type: Number,
     required: true,
-    min: 0,
-    max: 16 * 1024 * 1024 // 16MB limit for MongoDB
+    min: 0
   },
+  // NEW: Store S3 key instead of encrypted data for Filebase storage
+  s3Key: {
+    type: String,
+    required: false, // Optional for backward compatibility
+    index: true
+  },
+  // NEW: Store IPFS CID for blockchain anchoring
+  cid: {
+    type: String,
+    required: false, // Optional for backward compatibility
+    index: true
+  },
+  // DEPRECATED: Legacy field for backward compatibility
+  // New uploads will use s3Key and cid instead
   encryptedData: {
     type: String,
-    required: true
-    // This stores the base64 encoded encrypted file data
+    required: false
+    // This stores the base64 encoded encrypted file data (legacy)
   },
   isDescription: {
     type: Boolean,
@@ -92,6 +105,18 @@ const EvidenceSchema = new mongoose.Schema({
     merkleRoot: {
       type: String,
       default: null
+    },
+    // NEW: Store the root CID for all files in this evidence
+    cidRoot: {
+      type: String,
+      default: null,
+      index: true
+    },
+    // NEW: Store the primary S3 key (or root path) for this evidence
+    s3KeyRoot: {
+      type: String,
+      default: null,
+      index: true
     },
     anchored: {
       type: Boolean,

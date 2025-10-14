@@ -65,9 +65,13 @@ AEGIS solves these problems with decentralized, encrypted, blockchain-anchored e
 
 ### 📤 **Evidence Management**
 - **Multi-file upload**: Photos, videos, audio, documents
+- **Decentralized storage**: Files stored on IPFS via Filebase (S3-compatible)
+- **Real IPFS CIDs**: Each file gets a unique Content Identifier
+- **Blockchain anchoring**: Real CIDs and S3 keys anchored on-chain
 - **Steganography**: Hide evidence inside innocent-looking images
 - **Automatic encryption**: AES encryption with your master key
 - **Metadata protection**: File details encrypted and protected
+- **5GB free tier**: Ample storage for evidence files
 
 ### 🆘 **Emergency Features**
 - **SOS alerts**: Send location and evidence to authorities/NGOs
@@ -285,7 +289,17 @@ npm install
 npm install ethers@5.7.2
 
 # Set up environment
-cp .env.example .env  # Edit .env with your settings
+# Edit the existing .env file and add Filebase credentials
+
+# Configure Filebase (Optional but Recommended)
+# 1. Sign up at https://filebase.com/ (5GB free)
+# 2. Create a bucket with IPFS storage
+# 3. Get Access Key and Secret Key
+# 4. Add to .env:
+#    FILEBASE_ACCESS_KEY=your_key_here
+#    FILEBASE_SECRET_KEY=your_secret_here
+#    FILEBASE_BUCKET=aegis-evidence
+# See QUICK_SETUP_FILEBASE.md for detailed instructions
 
 # Start MongoDB (if local)
 mongod

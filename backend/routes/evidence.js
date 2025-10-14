@@ -11,6 +11,8 @@ const User = require('../models/User');
 const { availabilityLimiter, generalLimiter } = require('../middleware/rateLimiter');
 // NEW: Import blockchain service
 const { fundUserWallet, ensureBalanceForAnchoring, processBlockchainData } = require('../services/blockchainService');
+// NEW: Import Filebase service for real S3/IPFS storage
+const { uploadMultipleFiles, isFilebaseConfigured } = require('../services/filebaseService');
 
 const router = express.Router();
 
@@ -147,27 +149,97 @@ router.post('/upload', generalLimiter, async (req, res) => {
     const blockchainData = processBlockchainData(blockchain);
     console.log('⛓️  [Evidence] Blockchain data processed:', blockchainData.anchored ? 'anchored' : 'not anchored');
 
-    // Create evidence record
-    const evidence = new Evidence({
-      walletAddress: walletAddress.toLowerCase(),
-      files: files.map(file => ({
+    // NEW: Upload files to Filebase (S3 + IPFS)
+    console.log('📤 [Evidence] Starting Filebase upload...');
+    
+    // Generate evidence ID early for Filebase upload
+    const evidenceId = `evidence_${walletAddress.slice(2, 10)}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    
+    let uploadedFiles;
+    let cidRoot = null;
+    let s3KeyRoot = null;
+    
+    if (isFilebaseConfigured()) {
+      console.log('✅ [Evidence] Filebase configured, uploading to S3/IPFS...');
+      
+      // Prepare files for upload
+      const filesToUpload = files.map(file => ({
+        data: file.encryptedData, // base64 string
+        fileName: file.fileName,
+        fileType: file.fileType,
+        fileSize: file.fileSize
+      }));
+      
+      // Upload to Filebase
+      const uploadResults = await uploadMultipleFiles(filesToUpload, walletAddress, evidenceId);
+      
+      // Check for upload failures
+      const failedUploads = uploadResults.filter(r => !r.success);
+      if (failedUploads.length > 0) {
+        console.error('❌ [Evidence] Some files failed to upload:', failedUploads);
+        return res.status(500).json({ 
+          error: 'Some files failed to upload to storage',
+          failedFiles: failedUploads.map(f => f.fileName)
+        });
+      }
+      
+      console.log('✅ [Evidence] All files uploaded to Filebase successfully');
+      
+      // Use the first file's CID as the root CID for now
+      // In a more advanced implementation, you could create a directory CID
+      cidRoot = uploadResults[0]?.cid || null;
+      s3KeyRoot = uploadResults[0]?.s3Key || null;
+      
+      // Map uploaded files with S3 keys and CIDs
+      uploadedFiles = uploadResults.map((uploadResult, index) => ({
+        fileName: uploadResult.fileName,
+        fileType: uploadResult.fileType,
+        fileSize: uploadResult.fileSize,
+        s3Key: uploadResult.s3Key,
+        cid: uploadResult.cid,
+        isDescription: files[index].isDescription || false,
+        timestamp: new Date(uploadResult.uploadedAt)
+      }));
+      
+    } else {
+      console.log('⚠️  [Evidence] Filebase not configured, using legacy MongoDB storage');
+      
+      // Legacy mode: store encrypted data in MongoDB
+      uploadedFiles = files.map(file => ({
         fileName: file.fileName,
         fileType: file.fileType,
         fileSize: file.fileSize,
         encryptedData: file.encryptedData,
-        isDescription: file.isDescription || false, // ADD: Support for description flag
+        isDescription: file.isDescription || false,
         timestamp: file.timestamp || new Date()
-      })),
+      }));
+    }
+
+    // Create evidence record
+    const evidence = new Evidence({
+      evidenceId: evidenceId, // Use pre-generated ID
+      walletAddress: walletAddress.toLowerCase(),
+      files: uploadedFiles, // Use uploaded files with S3 keys and CIDs
       coverImage: coverImage || null,
       steganographyEnabled: steganographyEnabled || false,
       uploadedAt: uploadedAt || new Date(),
-      // NEW: Include blockchain data
-      blockchain: blockchainData
+      // NEW: Include blockchain data with CID and S3 key roots
+      blockchain: {
+        ...blockchainData,
+        cidRoot: cidRoot,
+        s3KeyRoot: s3KeyRoot
+      }
     });
 
     await evidence.save();
 
     console.log(`📤 [Evidence] Upload successful: ${evidence.evidenceId} (${files.length} files, ${evidence.metadata.totalSize} bytes)`);
+    
+    // Log storage details
+    if (isFilebaseConfigured()) {
+      console.log(`🔗 [Evidence] Root CID: ${cidRoot}`);
+      console.log(`📦 [Evidence] Root S3 Key: ${s3KeyRoot}`);
+    }
 
     res.status(201).json({
       success: true,
@@ -175,8 +247,12 @@ router.post('/upload', generalLimiter, async (req, res) => {
       filesUploaded: files.length,
       totalSize: evidence.metadata.totalSize,
       steganographyEnabled: evidence.steganographyEnabled,
-      // NEW: Include blockchain results
-      blockchain: blockchainData
+      // NEW: Include blockchain results with CID and S3 key
+      blockchain: {
+        ...blockchainData,
+        cidRoot: cidRoot,
+        s3KeyRoot: s3KeyRoot
+      }
     });
 
   } catch (error) {
@@ -254,12 +330,14 @@ router.get('/:evidenceId', generalLimiter, async (req, res) => {
       success: true,
       evidenceId: evidence.evidenceId,
       walletAddress: evidence.walletAddress,
-      files: evidence.files, // Includes encrypted data
+      files: evidence.files, // Includes encrypted data (legacy) OR s3Key/cid (new)
       coverImage: evidence.coverImage,
       description: evidence.description,
       steganographyEnabled: evidence.steganographyEnabled,
       uploadedAt: evidence.uploadedAt,
-      metadata: evidence.metadata
+      metadata: evidence.metadata,
+      // NEW: Include blockchain data with CID and S3 key
+      blockchain: evidence.blockchain
     });
 
   } catch (error) {

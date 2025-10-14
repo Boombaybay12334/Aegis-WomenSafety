@@ -100,48 +100,79 @@ export const uploadEvidence = async (files, coverImage, description = '') => {
       };
     }
     
-    // NEW: Blockchain anchoring before backend upload
+    // STEP 1: Upload to backend first (backend will upload to Filebase and get CID + S3 key)
+    const evidenceData = {
+      walletAddress,
+      files: encryptedFiles,
+      coverImage: coverImageData,
+      steganographyEnabled: !!coverImage,
+      uploadedAt: new Date().toISOString()
+    };
+    
+    // Upload to backend
+    console.log('📤 [Evidence] Uploading to backend (Filebase storage)...');
+    const uploadResult = await uploadEvidenceMetadata(evidenceData);
+    
+    // STEP 2: Blockchain anchoring AFTER backend upload (to get real CID and S3 key)
     let blockchainResult = null;
     try {
-      console.log('⛓️  [Evidence] Starting blockchain anchoring...');
+      // Check if backend returned CID and S3 key from Filebase
+      const cidRoot = uploadResult.blockchain?.cidRoot;
+      const s3KeyRoot = uploadResult.blockchain?.s3KeyRoot;
       
-      // NEW: Ensure wallet has sufficient balance before anchoring
-      console.log('💰 [Evidence] Checking wallet balance and funding if needed...');
-      const prepareResult = await prepareForAnchoring(walletAddress);
-      
-      if (prepareResult.success && prepareResult.ready) {
-        console.log('✅ [Evidence] Wallet ready for anchoring');
-        if (prepareResult.fundingPerformed) {
-          console.log(`💰 [Evidence] Wallet was funded: ${prepareResult.currentBalance} ETH`);
+      if (cidRoot && s3KeyRoot) {
+        console.log('⛓️  [Evidence] Starting blockchain anchoring with real CID and S3 key...');
+        console.log(`🔗 CID: ${cidRoot}`);
+        console.log(`📦 S3 Key: ${s3KeyRoot}`);
+        
+        // Ensure wallet has sufficient balance before anchoring
+        console.log('💰 [Evidence] Checking wallet balance and funding if needed...');
+        const prepareResult = await prepareForAnchoring(walletAddress);
+        
+        if (prepareResult.success && prepareResult.ready) {
+          console.log('✅ [Evidence] Wallet ready for anchoring');
+          if (prepareResult.fundingPerformed) {
+            console.log(`💰 [Evidence] Wallet was funded: ${prepareResult.currentBalance} ETH`);
+          } else {
+            console.log(`💰 [Evidence] Wallet has sufficient balance: ${prepareResult.currentBalance} ETH`);
+          }
         } else {
-          console.log(`💰 [Evidence] Wallet has sufficient balance: ${prepareResult.currentBalance} ETH`);
+          console.warn('⚠️ [Evidence] Failed to prepare wallet for anchoring, will attempt anyway...');
+        }
+        
+        // Attempt blockchain anchoring with real CID and S3 key
+        blockchainResult = await anchorEvidenceToBlockchain(
+          uploadResult.evidenceId,
+          encryptedFiles,
+          walletAddress,
+          passphrase,
+          cidRoot,  // Pass real CID from Filebase
+          s3KeyRoot // Pass real S3 key from Filebase
+        );
+        
+        if (blockchainResult.success) {
+          console.log('✅ [Evidence] Blockchain anchoring successful');
+          console.log(`🧾 Transaction: ${blockchainResult.transactionHash}`);
+          console.log(`🧱 Block: ${blockchainResult.blockNumber}`);
+          
+          // TODO: Send blockchain result back to backend to update evidence record
+          // This would be a PATCH request to update the blockchain fields
+        } else {
+          console.warn('⚠️ [Evidence] Blockchain anchoring failed');
+          console.warn(`❌ Error: ${blockchainResult.error}`);
         }
       } else {
-        console.warn('⚠️ [Evidence] Failed to prepare wallet for anchoring, will attempt anyway...');
-      }
-      
-      // Generate temporary evidence ID for blockchain anchoring
-      const tempEvidenceId = `evidence_${walletAddress.slice(2, 10)}_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-      
-      // Attempt blockchain anchoring with encrypted files
-      blockchainResult = await anchorEvidenceToBlockchain(
-        tempEvidenceId,
-        encryptedFiles,
-        walletAddress,
-        passphrase
-      );
-      
-      if (blockchainResult.success) {
-        console.log('✅ [Evidence] Blockchain anchoring successful');
-        console.log(`🧾 Transaction: ${blockchainResult.transactionHash}`);
-        console.log(`🧱 Block: ${blockchainResult.blockNumber}`);
-      } else {
-        console.warn('⚠️ [Evidence] Blockchain anchoring failed, continuing with upload...');
-        console.warn(`❌ Error: ${blockchainResult.error}`);
+        console.warn('⚠️ [Evidence] CID or S3 key not available from backend, skipping blockchain anchoring');
+        console.warn('💡 This may be because Filebase is not configured (running in mock mode)');
+        blockchainResult = {
+          success: false,
+          error: 'CID or S3 key not available from storage',
+          errorType: 'STORAGE_NOT_CONFIGURED'
+        };
       }
       
     } catch (blockchainError) {
-      console.warn('⚠️ [Evidence] Blockchain anchoring failed with exception, continuing with upload...');
+      console.warn('⚠️ [Evidence] Blockchain anchoring failed with exception');
       console.warn('❌ Blockchain error:', blockchainError.message);
       
       blockchainResult = {
@@ -150,21 +181,6 @@ export const uploadEvidence = async (files, coverImage, description = '') => {
         errorType: 'BLOCKCHAIN_EXCEPTION'
       };
     }
-    
-    // Prepare evidence data for backend
-    const evidenceData = {
-      walletAddress,
-      files: encryptedFiles,
-      coverImage: coverImageData,
-      steganographyEnabled: !!coverImage,
-      uploadedAt: new Date().toISOString(),
-      // NEW: Include blockchain data
-      blockchain: blockchainResult
-    };
-    
-    // Upload to backend
-    console.log('📤 [Evidence] Uploading to backend...');
-    const uploadResult = await uploadEvidenceMetadata(evidenceData);
     
     // Clear sensitive data (masterKey is hex string, not array)
     let masterKeyCopy = masterKey;

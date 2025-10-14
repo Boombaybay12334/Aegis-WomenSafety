@@ -84,9 +84,11 @@ const evidenceIdToBytes32 = (evidenceId) => {
  * @param {Array} encryptedFiles - Array of encrypted file objects
  * @param {string} walletAddress - User's wallet address
  * @param {string} passphrase - User's passphrase for wallet access
+ * @param {string} cidRoot - IPFS CID from Filebase storage
+ * @param {string} s3KeyRoot - S3 key from Filebase storage
  * @returns {Promise<Object>} Blockchain transaction result
  */
-export const anchorEvidenceToBlockchain = async (evidenceId, encryptedFiles, walletAddress, passphrase) => {
+export const anchorEvidenceToBlockchain = async (evidenceId, encryptedFiles, walletAddress, passphrase, cidRoot = null, s3KeyRoot = null) => {
   const startTime = Date.now();
   
   try {
@@ -94,6 +96,8 @@ export const anchorEvidenceToBlockchain = async (evidenceId, encryptedFiles, wal
     console.log(`📋 Evidence ID: ${evidenceId}`);
     console.log(`👤 Wallet: ${walletAddress}`);
     console.log(`📄 Files: ${encryptedFiles.length}`);
+    console.log(`🔗 CID Root: ${cidRoot || 'not provided (will use placeholder)'}`);
+    console.log(`📦 S3 Key Root: ${s3KeyRoot || 'not provided (will use placeholder)'}`);
     
     // Create provider
     const provider = createProvider();
@@ -131,13 +135,23 @@ export const anchorEvidenceToBlockchain = async (evidenceId, encryptedFiles, wal
     // Generate blockchain parameters
     const evidenceIdBytes32 = evidenceIdToBytes32(evidenceId);
     const merkleRoot = generateEvidenceMerkleRoot(encryptedFiles);
-    const cidRoot = ethers.utils.id('aegis-evidence-cid'); // Placeholder for IPFS
-    const s3Key = ethers.utils.id(`aegis-s3-${evidenceId}`); // Placeholder for S3
+    
+    // Use real CID and S3 key if provided, otherwise use placeholders
+    const finalCidRoot = cidRoot 
+      ? ethers.utils.id(cidRoot) 
+      : ethers.utils.id('aegis-evidence-cid-placeholder');
+    
+    const finalS3Key = s3KeyRoot 
+      ? ethers.utils.id(s3KeyRoot) 
+      : ethers.utils.id(`aegis-s3-placeholder-${evidenceId}`);
+    
     const policyId = getPrivacyPolicyHash();
     
     console.log('📊 [Blockchain] Transaction parameters prepared');
     console.log(`🔗 Evidence ID (bytes32): ${evidenceIdBytes32}`);
     console.log(`🌳 Merkle Root: ${merkleRoot}`);
+    console.log(`📦 CID Root (bytes32): ${finalCidRoot}`);
+    console.log(`🗂️  S3 Key (bytes32): ${finalS3Key}`);
     console.log(`📜 Policy ID: ${policyId}`);
     
     // Create contract instance
@@ -152,8 +166,8 @@ export const anchorEvidenceToBlockchain = async (evidenceId, encryptedFiles, wal
       gasEstimate = await contract.estimateGas.anchorEvidence(
         evidenceIdBytes32,
         merkleRoot,
-        cidRoot,
-        s3Key,
+        finalCidRoot,
+        finalS3Key,
         policyId
       );
       console.log(`⛽ [Blockchain] Gas estimate: ${gasEstimate.toString()}`);
@@ -174,8 +188,8 @@ export const anchorEvidenceToBlockchain = async (evidenceId, encryptedFiles, wal
         transaction = await contract.anchorEvidence(
           evidenceIdBytes32,
           merkleRoot,
-          cidRoot,
-          s3Key,
+          finalCidRoot,
+          finalS3Key,
           policyId,
           {
             gasLimit: gasEstimate.mul(120).div(100), // 20% buffer
@@ -216,6 +230,8 @@ export const anchorEvidenceToBlockchain = async (evidenceId, encryptedFiles, wal
       blockNumber: receipt.blockNumber,
       gasUsed: receipt.gasUsed.toString(),
       merkleRoot: merkleRoot,
+      cidRoot: cidRoot || null, // Original CID (not hashed)
+      s3KeyRoot: s3KeyRoot || null, // Original S3 key (not hashed)
       evidenceIdBytes32: evidenceIdBytes32,
       policyId: policyId,
       timestamp: new Date().toISOString(),
