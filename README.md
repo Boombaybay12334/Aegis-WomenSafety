@@ -1772,7 +1772,7 @@ SOFTWARE.
 
 *"Technology should empower the vulnerable, not exploit them. AEGIS exists to give domestic abuse victims the tools they need to document abuse, seek help, and rebuild their lives with dignity and safety."*
 
-**Created by The DUO Team**
+**Created by The DUO Team:: Abhinav Kumar Singh & Akshita Vijay**
 
 ---
 
