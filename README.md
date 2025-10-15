@@ -1708,7 +1708,7 @@ npm run build
 ```bash
 # Update hardhat.config.js with your private key
 # Get testnet MATIC from faucet
-
+npx hardhat run scripts/deploy.js --network localhost
 npx hardhat run scripts/deploy.js --network cardona
 
 # Update blockchaininfo/contractInfo.json with new address
